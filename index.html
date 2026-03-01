@@ -1,633 +1,293 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WPS 快查 · 侧边灵感版</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<title>仓位管理系统</title>
+<style>
+*{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto}
+body{margin:0;background:#f4f5f7;padding:8px}
 
-        body {
-            background: #f0f2f5;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+/* 登录 */
+#loginWrapper{position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{width:90%;max-width:380px;padding:30px;border-radius:16px;background:#f9fafb;text-align:center}
+.login-box h3{margin-bottom:20px;color:#1e293b}
+.login-input{width:100%;padding:12px 16px;border-radius:12px;border:1px solid #cbd5e1;margin-bottom:12px;outline:none;font-size:16px}
+.login-btn{width:100%;padding:12px;border-radius:12px;background:#2563eb;color:white;border:none;font-size:16px;margin-bottom:8px;cursor:pointer}
+.gray-btn{background:#64748b}
 
-        /* 整体卡片模拟WPS窗口 */
-        .wps-mock {
-            width: 1200px;
-            max-width: 100%;
-            background-color: #ffffff;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.2), 0 8px 16px -6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+/* 弹窗 */
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:99999}
+.modal-body{background:#fff;border-radius:16px;width:90%;max-width:400px;padding:24px;max-height:80vh;overflow-y:auto}
+.modal-body h4{margin-top:0;margin-bottom:16px}
+.user-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee}
+.del-user{color:#ef4444;font-size:14px;cursor:pointer}
 
-        /* 模拟WPS 标题栏 (轻量) */
-        .title-bar {
-            background: #f9fafc;
-            padding: 12px 24px;
-            border-bottom: 1px solid #e6e9f0;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            color: #1e2a3a;
-            font-weight: 500;
-            font-size: 15px;
-        }
+/* 主界面 */
+.app-container{width:100%;max-width:1200px;background:white;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.08);overflow:hidden;display:none;margin:0 auto}
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid #e2e6ea}
+.title{font-size:16px;font-weight:500;color:#1e293b}
+.btns{display:flex;gap:8px}
+.btn-circle{width:36px;height:36px;border-radius:50%;border:none;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.btn-add{background:#10b981}
+.btn-scan{background:#2563eb}
+.btn-user{background:#8b5cf6}
+.btn-del{background:#ef4444}
+.btn-import{background:#0ea5e9}
+.btn-export{background:#f59e0b}
 
-        .title-bar span:first-child {
-            background: #d9e1ff;
-            color: #2b4b9a;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 13px;
-            font-weight: 600;
-        }
+.search-bar{padding:12px 20px;border-bottom:1px solid #e2e6ea}
+.search-input{width:100%;padding:10px 16px;border-radius:12px;border:1px solid #cbd5e1;outline:none;font-size:16px}
 
-        .title-bar i {
-            margin-left: auto;
-            color: #7a879c;
-            font-style: normal;
-            font-size: 14px;
-        }
+.table-wrapper{padding:16px 20px}
+table{width:100%;border-collapse:collapse}
+th{background:#f7f9fc;padding:12px 8px;text-align:left;border-bottom:2px solid #cbd5e1}
+td{padding:12px 8px;border-bottom:1px solid #e2e6ea}
 
-        /* 主内容区域 = 文档区 + 快查侧边栏 (flex并排) */
-        .workspace {
-            display: flex;
-            min-height: 580px;
-        }
+#scanner{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;display:flex;flex-direction:column;z-index:9999}
+#video{width:100%;height:80vh}
+#closeScan{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;background:#ef4444;color:white;border:none;border-radius:8px}
 
-        /* 左侧文档编辑区 — 就像WPS文字 */
-        .document-panel {
-            flex: 2.2;          /* 占比更大，更像文档 */
-            background: #ffffff;
-            padding: 32px 36px;
-            border-right: 1px solid #e9ecf2;
-            overflow-y: auto;
-            box-shadow: inset 0 -4px 10px rgba(0,0,0,0.02);
-        }
-
-        .document-panel h2 {
-            font-size: 22px;
-            font-weight: 600;
-            color: #0b1e33;
-            margin-bottom: 4px;
-            letter-spacing: -0.2px;
-        }
-
-        .document-panel .subhead {
-            color: #546e7a;
-            font-size: 14px;
-            margin-bottom: 28px;
-            border-left: 4px solid #3b7cff;
-            padding-left: 12px;
-            background: #f6f9fe;
-            border-radius: 0 8px 8px 0;
-            line-height: 1.5;
-        }
-
-        /* 文档文本样式 — 可选中 */
-        .doc-content {
-            font-size: 16px;
-            line-height: 1.7;
-            color: #1f2a41;
-        }
-
-        .doc-content p {
-            margin-bottom: 20px;
-        }
-
-        /* 高亮显示选中词汇 (模拟WPS快查触发效果) */
-        .doc-content mark {
-            background: #eef4ff;
-            color: #0037b3;
-            font-weight: 500;
-            border-radius: 6px;
-            padding: 2px 4px;
-            border-bottom: 2px solid #3b7cff;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-
-        .doc-content mark:hover {
-            background: #dae6ff;
-        }
-
-        /* 右侧快查面板 — 和WPS快查一模一样的气质 */
-        .quicklook-panel {
-            flex: 1.2;
-            background: #f8fafd;
-            border-left: 1px solid #dee4ed;
-            padding: 24px 18px;
-            overflow-y: auto;
-            box-shadow: -4px 0 12px rgba(0, 20, 30, 0.04);
-            transition: all 0.2s;
-        }
-
-        /* 面板头部 */
-        .ql-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #dce2ec;
-        }
-
-        .ql-header h3 {
-            font-weight: 600;
-            font-size: 18px;
-            color: #122c47;
-            letter-spacing: -0.2px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .ql-header h3 i {
-            background: #e9edf4;
-            width: 28px;
-            height: 28px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            color: #2b4b9a;
-            font-style: normal;
-            font-weight: 700;
-            font-size: 16px;
-        }
-
-        .ql-header .hint {
-            background: #dee5f0;
-            padding: 4px 10px;
-            border-radius: 30px;
-            font-size: 12px;
-            color: #1a385c;
-        }
-
-        /* 快查卡片 (内容由js动态填充) */
-        .info-card {
-            background: white;
-            border-radius: 18px;
-            padding: 20px 18px;
-            box-shadow: 0 6px 14px rgba(0, 16, 36, 0.06), 0 2px 4px rgba(0,0,0,0.02);
-            border: 1px solid rgba(200, 212, 230, 0.4);
-            margin-bottom: 24px;
-        }
-
-        .query-term {
-            font-size: 26px;
-            font-weight: 650;
-            color: #002856;
-            line-height: 1.2;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .query-term small {
-            font-size: 14px;
-            font-weight: 400;
-            color: #53718e;
-            background: #ecf2fa;
-            padding: 2px 12px;
-            border-radius: 30px;
-        }
-
-        .dict-entry {
-            margin-top: 10px;
-        }
-
-        .dict-entry .pos {
-            color: #3c5a7d;
-            font-weight: 600;
-            font-size: 14px;
-            display: inline-block;
-            background: #e4ecf7;
-            padding: 2px 10px;
-            border-radius: 16px;
-            margin: 8px 0 6px 0;
-        }
-
-        .dict-entry .definition {
-            font-size: 16px;
-            color: #173451;
-            margin: 10px 0 8px 0;
-            padding-left: 6px;
-            border-left: 3px solid #3b7cff;
-            padding-left: 14px;
-        }
-
-        .example {
-            background: #f2f6fc;
-            padding: 14px 16px;
-            border-radius: 14px;
-            font-size: 15px;
-            color: #214973;
-            margin: 15px 0 10px 0;
-            border: 1px dashed #b7c9e6;
-            font-style: italic;
-        }
-
-        .example i {
-            color: #5a6f8c;
-        }
-
-        /* 相关词组/同义词等 */
-        .related-box {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px 12px;
-            margin: 18px 0 8px;
-            border-top: 1px solid #e2e9f2;
-            padding-top: 16px;
-        }
-
-        .related-item {
-            background: white;
-            border: 1px solid #cddcf2;
-            padding: 6px 18px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #1e3e70;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            cursor: default;
-            transition: all 0.1s;
-        }
-
-        .related-item:hover {
-            background: #e3edff;
-            border-color: #3b7cff;
-        }
-
-        /* 无查询占位 */
-        .placeholder-message {
-            color: #5d738c;
-            text-align: center;
-            padding: 32px 16px;
-            background: #f1f5fb;
-            border-radius: 28px;
-            font-size: 15px;
-            border: 1px dashed #bacfe8;
-        }
-
-        .placeholder-message span {
-            font-size: 42px;
-            display: block;
-            margin-bottom: 10px;
-        }
-
-        /* 右侧下方附加解释说明 */
-        .meta-note {
-            font-size: 13px;
-            color: #6b83a1;
-            background: #eef3fc;
-            border-radius: 12px;
-            padding: 12px 14px;
-            margin-top: 20px;
-            border: 1px solid #d5e1f2;
-        }
-
-        .meta-note b {
-            color: #002856;
-        }
-
-        /* 简单响应式 */
-        @media (max-width: 800px) {
-            .workspace { flex-direction: column; }
-            .document-panel { border-right: none; border-bottom: 1px solid #dee4ed; }
-        }
-    </style>
+.file-input{display:none}
+</style>
 </head>
+
 <body>
-<div class="wps-mock">
-    <!-- 标题栏，WPS风格 -->
-    <div class="title-bar">
-        <span>📄 文档 · 快查模式</span>
-        <span>WPS 快查 · 选中词汇即刻释义</span>
-        <i>⚡ 与 WPS 快查完全一样的体验</i>
-    </div>
 
-    <!-- 主体：文档 + 侧边快查 -->
-    <div class="workspace">
-        <!-- 左侧文档区域（可选中文字触发快查） -->
-        <div class="document-panel">
-            <h2>⛰️ 山居笔记 · 节选</h2>
-            <div class="subhead">双击或划词选中 · 右侧快查面板自动更新 (模拟WPS)</div>
-
-            <div class="doc-content" id="docContent">
-                <p>« 山气日夕佳，飞鸟相与还。此中有真意，欲辨已忘言 »  —— 陶渊明《饮酒》</p>
-                <p>秋天的一个早晨，我推开窗，看见远山蒙着薄雾，<mark data-word="氤氲">氤氲</mark>的水汽缓缓流动。忽然想起王维的句子：「行到水穷处，坐看云起时」。这种<mark data-word="禅意">禅意</mark>，怕只有在中国山水画里才能寻见。友人曾笑我太迷恋古意，我却觉得那些旧书里的文字，是千年不灭的<mark data-word="薪火">薪火</mark>。</p>
-                <p>继续往山里走，路过一座废弃的寺庙，门匾上写着「<mark data-word="灵麓">灵麓</mark>禅寺」。殿内只剩几根石柱，但轮廓依旧<mark data-word="巍然">巍然</mark>。站在庭院里，忽然想起「<mark data-word="刹那">刹那</mark>」这个词。万物都在流转，但有些东西似乎凝固了——比如石缝里的青苔，比如山间的<mark data-word="岚">岚</mark>气。</p>
-                <p>傍晚回到书斋，翻到《世说新语》中一段：「王子猷居山阴，夜大雪……忽忆戴安道，即便夜乘小船就之，经宿方至，造门不前而返。人问其故，王曰：吾本乘兴而行，兴尽而返，何必见戴？」这般<mark data-word="洒脱">洒脱</mark>，令人神往。或许这就是东方特有的<mark data-word="隽永">隽永</mark>。</p>
-            </div>
-        </div>
-
-        <!-- 右侧快查面板 (WPS 快查核心区) -->
-        <div class="quicklook-panel" id="quicklookPanel">
-            <div class="ql-header">
-                <h3><i>📘</i> WPS 快查</h3>
-                <div class="hint">划词即查</div>
-            </div>
-
-            <!-- 动态快查卡片将显示在这里（由js更新） -->
-            <div id="dynamicInfoCard" class="info-card">
-                <!-- 占位内容 (未选择词汇时显示) -->
-                <div class="placeholder-message">
-                    <span>🔍</span>
-                    在左侧文档中<br>点击或划词查看解释
-                </div>
-            </div>
-
-            <!-- 附加说明：和WPS一样提供网络释义/知识扩展 (静态装饰) -->
-            <div class="meta-note">
-                <b>📎 关联知识</b> · 文中所有高亮词均可点击。快查内容参考《汉语大词典》《现代汉语词典》以及WPS官方快查风格。点击词汇右侧显示释义、例句、相关词组。
-            </div>
-        </div>
-    </div>
+<!-- 登录 -->
+<div id="loginWrapper">
+  <div class="login-box">
+    <h3>仓位管理登录</h3>
+    <input class="login-input" id="loginUser" placeholder="用户名" type="text">
+    <input class="login-input" id="loginPwd" placeholder="密码" type="password">
+    <button class="login-btn" onclick="login()">登录</button>
+    <button class="login-btn gray-btn" onclick="showUserManage()">用户管理</button>
+  </div>
 </div>
 
+<!-- 用户管理 -->
+<div class="modal" id="userModal">
+  <div class="modal-body">
+    <h4>用户管理</h4>
+    <div id="userList"></div>
+    <hr style="margin:16px 0">
+    <input class="login-input" id="newUserName" placeholder="用户名">
+    <input class="login-input" id="newUserPwd" placeholder="密码">
+    <button class="login-btn" onclick="addUser()">添加用户</button>
+    <button class="login-btn gray-btn" style="margin-top:8px" onclick="closeUserModal()">关闭</button>
+  </div>
+</div>
+
+<!-- 扫码 -->
+<div id="scanner">
+  <video id="video" autoplay playsinline></video>
+  <button id="closeScan" onclick="closeScanner()">关闭</button>
+</div>
+
+<!-- 主界面 -->
+<div class="app-container" id="mainApp">
+  <div class="top-bar">
+    <div class="title">📦 仓位扫码管理</div>
+    <div class="btns">
+      <button class="btn-circle btn-add" onclick="addRow()">＋</button>
+      <button class="btn-circle btn-del" onclick="deleteLastRow()">−</button>
+      <button class="btn-circle btn-import" onclick="document.getElementById('fileInput').click()">📥</button>
+      <button class="btn-circle btn-export" onclick="exportExcel()">📤</button>
+      <button class="btn-circle btn-scan" onclick="openScanner()">📷</button>
+      <button class="btn-circle btn-user" onclick="showUserManage()">👤</button>
+    </div>
+  </div>
+  <div class="search-bar">
+    <input class="search-input" id="search" placeholder="搜索仓位/编码/名称">
+    <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv" onchange="importExcel(event)">
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>仓位</th><th>编码</th><th>名称</th><th>D</th><th>E</th><th>F</th></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-    (function() {
-        // ---------- 丰富的数据词典 (模拟WPS快查侧边栏内容) ----------
-        const dictionary = {
-            // 针对高亮词汇预设详尽的内容
-            '氤氲': {
-                term: '氤氲',
-                phonetic: 'yīn yūn',
-                short: '气韵弥漫',
-                definitions: [
-                    { pos: '形容词', meaning: '形容烟云或雾气浓郁，弥漫飘动。也指天地阴阳之气交合状。' },
-                    { pos: '名词', meaning: '古代指阴阳二气交合之态，引申为迷茫、祥瑞之气。' }
-                ],
-                examples: [
-                    '清晨的山林里云雾氤氲，宛如仙境。',
-                    '《周易》·「天地氤氲，万物化醇。」'
-                ],
-                related: ['氤氲缭绕', '烟岚', '弥漫', '叆叇']
-            },
-            '禅意': {
-                term: '禅意',
-                phonetic: 'chán yì',
-                short: '禅的意境',
-                definitions: [
-                    { pos: '名词', meaning: '佛教禅宗所倡导的空灵、宁静、自在的意境或思想。也泛指带有禅味的趣味。' }
-                ],
-                examples: [
-                    '这幅画寥寥几笔，却充满禅意。',
-                    '园林设计讲究“虽由人作，宛自天开”的禅意。'
-                ],
-                related: ['禅机', '空灵', '静虑', 'zen']
-            },
-            '薪火': {
-                term: '薪火',
-                phonetic: 'xīn huǒ',
-                short: '柴火；比喻传承',
-                definitions: [
-                    { pos: '名词', meaning: '柴火燃烧的火。也比喻学术、技艺、精神代代相传（薪尽火传）。' }
-                ],
-                examples: [
-                    '文化犹如薪火，前辈传至后辈，绵延不绝。',
-                    '《庄子·养生主》：「指穷于为薪，火传也，不知其尽也。」'
-                ],
-                related: ['薪尽火传', '传承', '续焰']
-            },
-            '灵麓': {
-                term: '灵麓',
-                phonetic: 'líng lù',
-                short: '有灵气的山脚',
-                definitions: [
-                    { pos: '名词', meaning: '指山脚有灵秀之气；也借指岳麓山（因岳麓山号称“灵岳”）。在文中为寺庙名。' }
-                ],
-                examples: [
-                    '岳麓山又称“灵麓峰”，自古为读书讲学之地。',
-                    '寺名“灵麓”，取山灵水秀之意。'
-                ],
-                related: ['岳麓山', '钟灵毓秀', '山麓']
-            },
-            '巍然': {
-                term: '巍然',
-                phonetic: 'wēi rán',
-                short: '高大雄伟',
-                definitions: [
-                    { pos: '形容词', meaning: '形容山或建筑物高大雄伟，不可动摇的样子。' }
-                ],
-                examples: [
-                    '天安门城楼巍然屹立。',
-                    '石柱虽残，其势巍然。'
-                ],
-                related: ['巍峨', '屹立', '岿然']
-            },
-            '刹那': {
-                term: '刹那',
-                phonetic: 'chà nà',
-                short: '极短的时间',
-                definitions: [
-                    { pos: '名词', meaning: '梵语音译，表示极短的时间，一念之间。约相当于0.018秒。' }
-                ],
-                examples: [
-                    '刹那芳华，红颜弹指老。',
-                    '《仁王经》：「一念中有九十刹那。」'
-                ],
-                related: ['瞬间', '弹指', '须臾']
-            },
-            '岚': {
-                term: '岚',
-                phonetic: 'lán',
-                short: '山间雾气',
-                definitions: [
-                    { pos: '名词', meaning: '山间的雾气。如：晓岚、山岚、岚气。' }
-                ],
-                examples: [
-                    '山岚像水墨一样氤氲开来。',
-                    '王维诗：「瀑布杉松常带雨，夕阳彩翠忽成岚。」'
-                ],
-                related: ['岚气', '烟岚', '雾霭']
-            },
-            '洒脱': {
-                term: '洒脱',
-                phonetic: 'sǎ tuō',
-                short: '潇洒自然',
-                definitions: [
-                    { pos: '形容词', meaning: '形容言行自然、不拘束，超凡脱俗。' }
-                ],
-                examples: [
-                    '他为人率真洒脱，不为俗事所困。',
-                    '魏晋名士风度洒脱，令人追慕。'
-                ],
-                related: ['潇洒', '超脱', '倜傥']
-            },
-            '隽永': {
-                term: '隽永',
-                phonetic: 'juàn yǒng',
-                short: '意味深长',
-                definitions: [
-                    { pos: '形容词', meaning: '指言语、诗文、艺术等意味深长，耐人寻味。' }
-                ],
-                examples: [
-                    '文章虽短，但意味隽永。',
-                    '那种古典的隽永之美，如今愈发珍贵。'
-                ],
-                related: ['意味深长', '含蓄', '悠远']
-            }
-        };
+// ====================== 用户系统 ======================
+let currentUser = null;
 
-        // 获取dom元素
-        const docDiv = document.getElementById('docContent');
-        const dynamicCard = document.getElementById('dynamicInfoCard');
+function initUsers() {
+  if (!localStorage.getItem("users")) {
+    const users = [{ username: "admin", password: "123456", role: "admin" }];
+    localStorage.setItem("users", JSON.stringify(users));
+  }
+}
+initUsers();
 
-        // ---------- 渲染快查卡片 (根据词汇名称) ----------
-        function renderQuickLook(word) {
-            if (!word || !dictionary[word]) {
-                // 如果词不存在或者无查询，显示占位/默认界面
-                dynamicCard.innerHTML = `
-                    <div class="placeholder-message">
-                        <span>📖</span>
-                        “${word ? '暂无释义' : '点击上方词汇'}”<br>
-                        ${word ? '暂未收录该词解释' : '在左侧文档中点击任意高亮词'}
-                    </div>
-                `;
-                return;
-            }
+function getUsers() {
+  return JSON.parse(localStorage.getItem("users") || "[]");
+}
+function saveUsers(users) {
+  localStorage.setItem("users", JSON.stringify(users));
+}
 
-            const data = dictionary[word];
-            // 构建释义html
-            let defHtml = '';
-            data.definitions.forEach(def => {
-                defHtml += `<div class="pos">${def.pos}</div>`;
-                defHtml += `<div class="definition">${def.meaning}</div>`;
-            });
+function login() {
+  const username = document.getElementById("loginUser").value.trim();
+  const password = document.getElementById("loginPwd").value.trim();
+  const users = getUsers();
+  const u = users.find(x => x.username === username && x.password === password);
+  if (!u) return alert("账号或密码错误");
+  currentUser = u;
+  document.getElementById("loginWrapper").style.display = "none";
+  document.getElementById("mainApp").style.display = "block";
+}
 
-            // 构建例句html
-            let exHtml = '';
-            if (data.examples && data.examples.length) {
-                exHtml += '<div class="example">';
-                data.examples.forEach(ex => {
-                    exHtml += `“${ex}”<br>`;
-                });
-                exHtml += '</div>';
-            }
+function showUserManage() {
+  if (!currentUser || currentUser.role !== "admin") {
+    alert("仅管理员可操作");
+    return;
+  }
+  document.getElementById("userModal").style.display = "flex";
+  renderUserList();
+}
+function closeUserModal() {
+  document.getElementById("userModal").style.display = "none";
+}
+function renderUserList() {
+  const users = getUsers();
+  let html = "";
+  users.forEach(u => {
+    html += `
+    <div class="user-item">
+      <div>${u.username} (${u.role||"user"})</div>
+      ${u.username !== "admin" ? '<div class="del-user" onclick="delUser(\''+u.username+'\')">删除</div>' : ''}
+    </div>`;
+  });
+  document.getElementById("userList").innerHTML = html;
+}
+function addUser() {
+  const username = document.getElementById("newUserName").value.trim();
+  const password = document.getElementById("newUserPwd").value.trim();
+  if (!username || !password) return alert("请输入用户名和密码");
+  const users = getUsers();
+  if (users.some(x => x.username === username)) return alert("用户名已存在");
+  users.push({ username, password, role: "user" });
+  saveUsers(users);
+  renderUserList();
+  document.getElementById("newUserName").value = "";
+  document.getElementById("newUserPwd").value = "";
+}
+function delUser(username) {
+  if (username === "admin") return alert("不能删除管理员");
+  if (!confirm("确定删除？")) return;
+  let users = getUsers();
+  users = users.filter(x => x.username !== username);
+  saveUsers(users);
+  renderUserList();
+}
 
-            // 构建相关词组
-            let relatedHtml = '';
-            if (data.related && data.related.length) {
-                relatedHtml += '<div class="related-box">';
-                data.related.forEach(rel => {
-                    relatedHtml += `<span class="related-item">${rel}</span>`;
-                });
-                relatedHtml += '</div>';
-            }
+// ====================== 表格 ======================
+let data = [];
+function loadData() {
+  data = JSON.parse(localStorage.getItem("tableData") || "[]");
+  renderTable();
+}
+function saveData() {
+  localStorage.setItem("tableData", JSON.stringify(data));
+}
+function renderTable() {
+  const tbody = document.getElementById("tbody");
+  let html = "";
+  data.forEach((row, i) => {
+    html += `<tr>
+      <td contenteditable onblur="updateCell(${i},0,this.innerText)">${row[0]||""}</td>
+      <td contenteditable onblur="updateCell(${i},1,this.innerText)">${row[1]||""}</td>
+      <td contenteditable onblur="updateCell(${i},2,this.innerText)">${row[2]||""}</td>
+      <td contenteditable onblur="updateCell(${i},3,this.innerText)">${row[3]||""}</td>
+      <td contenteditable onblur="updateCell(${i},4,this.innerText)">${row[4]||""}</td>
+      <td contenteditable onblur="updateCell(${i},5,this.innerText)">${row[5]||""}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+function updateCell(i,c,v){data[i][c]=v;saveData()}
+function addRow(){data.push(["","","","","",""]);saveData();renderTable()}
+function deleteLastRow(){if(data.length===0)return;if(!confirm("确定删除最后一行？"))return;data.pop();saveData();renderTable()}
 
-            // 完整卡片
-            const cardHtml = `
-                <div class="query-term">
-                    ${data.term}
-                    <small>${data.phonetic || ''}</small>
-                </div>
-                <div class="dict-entry">
-                    ${defHtml}
-                </div>
-                ${exHtml}
-                ${relatedHtml}
-                <div style="margin-top: 12px; font-size:13px; color:#6f8ab1; border-left: 2px solid #abc0df; padding-left: 10px;">
-                    ⚡ WPS快查 · 释义来源：汉语大简
-                </div>
-            `;
-            dynamicCard.innerHTML = cardHtml;
-        }
+document.getElementById("search").oninput = function(){
+  const kw = this.value.toLowerCase();
+  document.querySelectorAll("#tbody tr").forEach((tr,i)=>{
+    const t = (data[i][0]+" "+data[i][1]+" "+data[i][2]).toLowerCase();
+    tr.style.display = t.includes(kw)?"":"none";
+  })
+}
 
-        // ---------- 处理选中/点击词汇 (高亮mark) ----------
-        function handleWordClick(event) {
-            const mark = event.target.closest('mark');  // 确保点击的是mark内部或者本身
-            if (!mark) return;
+// ====================== Excel ======================
+function importExcel(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const wb = XLSX.read(ev.target.result, { type: 'binary' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const arr = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    arr.shift();
+    data = arr.filter(r=>r.length>0).map(r=>[
+      r[0]||"",r[1]||"",r[2]||"",r[3]||"",r[4]||"",r[5]||""
+    ]);
+    saveData();
+    renderTable();
+    alert("导入成功");
+  };
+  reader.readAsBinaryString(file);
+}
 
-            const word = mark.getAttribute('data-word');  // 获取词汇标识
-            if (word && dictionary[word]) {
-                renderQuickLook(word);
-            } else {
-                // 如果data-word存在但没字典内容，显示fallback
-                renderQuickLook(null);  // 显示占位，并提示未知词汇
-                // 但是为了更友好，可以显示具体词
-                if (word) {
-                    // 重新使用一个临时版本
-                    dynamicCard.innerHTML = `
-                        <div class="placeholder-message">
-                            <span>🕮</span>
-                            “${word}”<br>快查暂未收录，试试其他词
-                        </div>
-                    `;
-                }
-            }
-        }
+function exportExcel() {
+  const ws = XLSX.utils.aoa_to_sheet([["仓位","编码","名称","D","E","F"],...data]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "仓位数据");
+  XLSX.writeFile(wb, "仓位数据.xlsx");
+}
 
-        // 为所有现有的mark绑定点击事件 (也包括后续动态绑定，但目前静态页面所有mark已经存在)
-        function bindMarkEvents() {
-            const marks = document.querySelectorAll('#docContent mark');
-            marks.forEach(m => {
-                m.removeEventListener('click', handleWordClick); // 防止重复绑定
-                m.addEventListener('click', handleWordClick);
-                // 增加一点样式提示
-                m.style.cursor = 'pointer';
-                m.title = '点击在快查侧栏查看详解';
-            });
-        }
+// ====================== 扫码 ======================
+let video, canvas, ctx, scanning;
+function openScanner() {
+  document.getElementById("scanner").style.display = "flex";
+  video = document.getElementById("video");
+  canvas = document.createElement("canvas");
+  ctx = canvas.getContext("2d");
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(s=>{video.srcObject=s;scanning=true;scan()});
+}
+function closeScanner() {
+  document.getElementById("scanner").style.display = "none";
+  if (video.srcObject) video.srcObject.getTracks().forEach(t=>t.stop());
+  scanning = false;
+}
+function scan() {
+  if (!scanning) return;
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video,0,0);
+    const code = jsQR(ctx.getImageData(0,0,canvas.width,canvas.height).data, canvas.width, canvas.height);
+    if (code) {
+      const t = code.data.trim();
+      const loc = t.match(/仓位[:：]\s*(\S+)/)?.[1]||"";
+      const codeStr = t.match(/编码[:：]\s*(\S+)/)?.[1]||"";
+      const name = t.match(/名称[:：]\s*(\S+)/)?.[1]||"";
+      data.push([loc,codeStr,name,"","",""]);
+      saveData();
+      renderTable();
+      closeScanner();
+      return;
+    }
+  }
+  requestAnimationFrame(scan);
+}
 
-        // 初始化：渲染默认占位（没有选中词时）
-        renderQuickLook(null);
-        bindMarkEvents();
-
-        // 可选：监听鼠标划词选中的文本(模拟WPS划词智能, 但为保持简洁只支持点击mark。但可以附加一个划词后备处理)
-        // 为了更贴近WPS快查的划词体验，简单实现: 当用户抬起鼠标时检测是否有选中文本且包含在某个mark内。 (额外增强)
-        docDiv.addEventListener('mouseup', function(e) {
-            const selection = window.getSelection();
-            const selectedText = selection.toString().trim();
-            if (selectedText.length > 0) {
-                // 尝试判断选中文本是否被某个mark包裹或者属于某个词汇 (简单方案：反向查找)
-                // 这里简单处理：如果选中区域完全在一个mark内，就触发对应词汇。
-                let node = selection.anchorNode;
-                if (node && node.nodeType === Node.TEXT_NODE) {
-                    const parent = node.parentNode;
-                    if (parent && parent.tagName === 'MARK') {
-                        const word = parent.getAttribute('data-word');
-                        if (word) {
-                            renderQuickLook(word);
-                            return;
-                        }
-                    }
-                }
-                // 如果划词不是直接mark，但划词文本恰好等于某个词条(扩展)
-                for (let key in dictionary) {
-                    if (selectedText === key) {
-                        renderQuickLook(key);
-                        return;
-                    }
-                }
-                // 未匹配划词: 可以忽略或显示占位。我们不自动清空，保持原有内容。
-            }
-        });
-
-        // 添加一点初始化后点击第一个词汇的引导（可选，让用户立刻看到效果：默认显示第一个词汇? 可以展示氤氲）
-        // 为了让页面一加载就能看到类似WPS快查的样子，可设定一个默认词（例如氤氲）
-        setTimeout(() => {
-            // 自动展示一个词汇作为示例
-            renderQuickLook('氤氲');
-        }, 100);
-    })();
+loadData();
 </script>
-<!-- 额外的笔记：本设计完全参考WPS快查的布局，右侧面板会动态展示词汇释义，带有拼音、词性、例句和相关词。所有高亮词均可点击。 -->
 </body>
 </html>
