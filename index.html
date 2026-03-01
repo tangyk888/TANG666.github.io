@@ -1,529 +1,633 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>仓位管理 · 扫码录入</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WPS 快查 · 侧边灵感版</title>
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
         }
+
         body {
-            background: #f4f5f7;
-            margin: 0;
+            background: #f0f2f5;
             min-height: 100vh;
-            padding: 8px;
-        }
-        .app-container {
-            width: 100%;
-            max-width: 1200px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            overflow: hidden;
-            border: 1px solid #e9edf2;
-            margin: 0 auto;
-        }
-        .status-bar {
-            background: #fefefe;
-            padding: 12px 20px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #e2e6ea;
-            font-size: 15px;
-            font-weight: 500;
-            color: #1e293b;
+            justify-content: center;
+            padding: 20px;
         }
-        .time-badge {
-            background: #f1f4f9;
+
+        /* 整体卡片模拟WPS窗口 */
+        .wps-mock {
+            width: 1200px;
+            max-width: 100%;
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.2), 0 8px 16px -6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 模拟WPS 标题栏 (轻量) */
+        .title-bar {
+            background: #f9fafc;
+            padding: 12px 24px;
+            border-bottom: 1px solid #e6e9f0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: #1e2a3a;
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .title-bar span:first-child {
+            background: #d9e1ff;
+            color: #2b4b9a;
             padding: 4px 12px;
             border-radius: 40px;
-            font-size: 15px;
-        }
-        .sheet-tabs {
-            display: flex;
-            gap: 2px;
-            background: #ffffff;
-            padding: 0 16px;
-        }
-        .sheet-tab {
-            padding: 8px 24px;
-            background: #f8fafc;
-            border: 1px solid #dee4ec;
-            border-bottom: none;
-            border-radius: 12px 12px 0 0;
-            font-weight: 500;
-            color: #3f4a5a;
-            font-size: 15px;
-            margin-right: 4px;
-        }
-        .sheet-tab.active {
-            background: white;
-            border-bottom: 2px solid #2563eb;
-            color: #1e40af;
+            font-size: 13px;
             font-weight: 600;
         }
-        .table-wrapper {
-            padding: 16px 20px;
-            background: white;
-            overflow-x: auto;
+
+        .title-bar i {
+            margin-left: auto;
+            color: #7a879c;
+            font-style: normal;
+            font-size: 14px;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+
+        /* 主内容区域 = 文档区 + 快查侧边栏 (flex并排) */
+        .workspace {
+            display: flex;
+            min-height: 580px;
+        }
+
+        /* 左侧文档编辑区 — 就像WPS文字 */
+        .document-panel {
+            flex: 2.2;          /* 占比更大，更像文档 */
+            background: #ffffff;
+            padding: 32px 36px;
+            border-right: 1px solid #e9ecf2;
+            overflow-y: auto;
+            box-shadow: inset 0 -4px 10px rgba(0,0,0,0.02);
+        }
+
+        .document-panel h2 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #0b1e33;
+            margin-bottom: 4px;
+            letter-spacing: -0.2px;
+        }
+
+        .document-panel .subhead {
+            color: #546e7a;
+            font-size: 14px;
+            margin-bottom: 28px;
+            border-left: 4px solid #3b7cff;
+            padding-left: 12px;
+            background: #f6f9fe;
+            border-radius: 0 8px 8px 0;
+            line-height: 1.5;
+        }
+
+        /* 文档文本样式 — 可选中 */
+        .doc-content {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #1f2a41;
+        }
+
+        .doc-content p {
+            margin-bottom: 20px;
+        }
+
+        /* 高亮显示选中词汇 (模拟WPS快查触发效果) */
+        .doc-content mark {
+            background: #eef4ff;
+            color: #0037b3;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 2px 4px;
+            border-bottom: 2px solid #3b7cff;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .doc-content mark:hover {
+            background: #dae6ff;
+        }
+
+        /* 右侧快查面板 — 和WPS快查一模一样的气质 */
+        .quicklook-panel {
+            flex: 1.2;
+            background: #f8fafd;
+            border-left: 1px solid #dee4ed;
+            padding: 24px 18px;
+            overflow-y: auto;
+            box-shadow: -4px 0 12px rgba(0, 20, 30, 0.04);
+            transition: all 0.2s;
+        }
+
+        /* 面板头部 */
+        .ql-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #dce2ec;
+        }
+
+        .ql-header h3 {
+            font-weight: 600;
+            font-size: 18px;
+            color: #122c47;
+            letter-spacing: -0.2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ql-header h3 i {
+            background: #e9edf4;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            color: #2b4b9a;
+            font-style: normal;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .ql-header .hint {
+            background: #dee5f0;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 12px;
+            color: #1a385c;
+        }
+
+        /* 快查卡片 (内容由js动态填充) */
+        .info-card {
             background: white;
             border-radius: 18px;
-            font-size: 15px;
-            min-width: 500px;
+            padding: 20px 18px;
+            box-shadow: 0 6px 14px rgba(0, 16, 36, 0.06), 0 2px 4px rgba(0,0,0,0.02);
+            border: 1px solid rgba(200, 212, 230, 0.4);
+            margin-bottom: 24px;
         }
-        th {
-            background: #f7f9fc;
-            font-weight: 600;
-            color: #1e2a3a;
-            border-bottom: 2px solid #cdd9e9;
-            padding: 14px 8px;
-            text-align: left;
-            border-right: 1px solid #e2e8f0;
-        }
-        td {
-            padding: 12px 8px;
-            border-bottom: 1px solid #e9edf3;
-            border-right: 1px solid #eef2f6;
-            color: #1f2a41;
-            vertical-align: middle;
-        }
-        th:last-child, td:last-child { border-right: none; }
-        .col-sub { font-size: 12px; color: #64748b; margin-left: 6px; }
-        .scan-panel {
-            background: #f8fafd;
-            padding: 20px 24px;
-            border-top: 1px solid #dde3ec;
-        }
-        .scan-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .scan-header h3 { margin: 0; font-size: 18px; color: #1e293b; }
-        .scan-btn {
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .scan-btn:active { transform: scale(0.97); }
-        .manual-input-area {
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-            border: 1px solid #e2e8f0;
-            margin-top: 16px;
-        }
-        .manual-label {
-            font-size: 14px;
-            color: #64748b;
+
+        .query-term {
+            font-size: 26px;
+            font-weight: 650;
+            color: #002856;
+            line-height: 1.2;
             margin-bottom: 8px;
-        }
-        .input-row {
             display: flex;
-            gap: 8px;
             align-items: center;
-            background: white;
-            border: 1px solid #cad5e2;
-            border-radius: 60px;
-            padding: 4px 18px;
+            gap: 10px;
         }
-        .input-row input {
-            flex: 1;
-            border: none;
-            padding: 12px 0;
-            font-size: 16px;
-            background: transparent;
-            outline: none;
+
+        .query-term small {
+            font-size: 14px;
+            font-weight: 400;
+            color: #53718e;
+            background: #ecf2fa;
+            padding: 2px 12px;
+            border-radius: 30px;
         }
-        .input-row button {
-            background: #2563eb;
-            border: none;
-            border-radius: 50px;
-            padding: 10px 22px;
-            color: white;
+
+        .dict-entry {
+            margin-top: 10px;
+        }
+
+        .dict-entry .pos {
+            color: #3c5a7d;
             font-weight: 600;
-            cursor: pointer;
-        }
-        .mock-qr-hint {
-            background: #eef4ff;
-            border-radius: 40px;
-            padding: 8px 18px;
             font-size: 14px;
-            color: #1e3a8a;
-            border: 1px dashed #3b82f6;
-            margin-top: 12px;
-            cursor: pointer;
-        }
-        .clear-btn {
-            background: white;
-            border: 1px solid #b3c6df;
-            border-radius: 40px;
-            padding: 9px 25px;
-            font-weight: 500;
-            color: #415a77;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .footer-note {
-            padding: 8px 24px 16px 24px;
-            font-size: 13px;
-            color: #6b7b93;
-            background: #ffffff;
-            border-top: 1px solid #eef3f9;
-            display: flex;
-            justify-content: space-between;
-        }
-        #scanner-container {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto 16px auto;
-            display: none;
+            display: inline-block;
+            background: #e4ecf7;
+            padding: 2px 10px;
             border-radius: 16px;
-            overflow: hidden;
-            border: 2px solid #2563eb;
+            margin: 8px 0 6px 0;
         }
-        #scanner-video {
-            width: 100%;
-            height: auto;
-            display: block;
+
+        .dict-entry .definition {
+            font-size: 16px;
+            color: #173451;
+            margin: 10px 0 8px 0;
+            padding-left: 6px;
+            border-left: 3px solid #3b7cff;
+            padding-left: 14px;
         }
-        .close-scanner {
-            background: #ef4444;
-            color: white;
-            border: none;
-            padding: 8px 16px;
+
+        .example {
+            background: #f2f6fc;
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-size: 15px;
+            color: #214973;
+            margin: 15px 0 10px 0;
+            border: 1px dashed #b7c9e6;
+            font-style: italic;
+        }
+
+        .example i {
+            color: #5a6f8c;
+        }
+
+        /* 相关词组/同义词等 */
+        .related-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            margin: 18px 0 8px;
+            border-top: 1px solid #e2e9f2;
+            padding-top: 16px;
+        }
+
+        .related-item {
+            background: white;
+            border: 1px solid #cddcf2;
+            padding: 6px 18px;
             border-radius: 40px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e3e70;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            cursor: default;
+            transition: all 0.1s;
+        }
+
+        .related-item:hover {
+            background: #e3edff;
+            border-color: #3b7cff;
+        }
+
+        /* 无查询占位 */
+        .placeholder-message {
+            color: #5d738c;
+            text-align: center;
+            padding: 32px 16px;
+            background: #f1f5fb;
+            border-radius: 28px;
+            font-size: 15px;
+            border: 1px dashed #bacfe8;
+        }
+
+        .placeholder-message span {
+            font-size: 42px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        /* 右侧下方附加解释说明 */
+        .meta-note {
+            font-size: 13px;
+            color: #6b83a1;
+            background: #eef3fc;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-top: 20px;
+            border: 1px solid #d5e1f2;
+        }
+
+        .meta-note b {
+            color: #002856;
+        }
+
+        /* 简单响应式 */
+        @media (max-width: 800px) {
+            .workspace { flex-direction: column; }
+            .document-panel { border-right: none; border-bottom: 1px solid #dee4ed; }
         }
     </style>
 </head>
 <body>
-<div class="app-container">
-    <div class="status-bar">
-        <div class="time-badge" id="current-time"></div>
-        <div style="display: flex; gap: 5px;">
-            <span style="color:#1e293b;">📦 仓位扫码管理</span>
-        </div>
-    </div>
-    <div style="padding-left:20px;">
-        <div class="sheet-tabs">
-            <span class="sheet-tab active">Sheet1</span>
-            <span class="sheet-tab">Sheet2</span>
-            <span class="sheet-tab">Sheet3</span>
-        </div>
+<div class="wps-mock">
+    <!-- 标题栏，WPS风格 -->
+    <div class="title-bar">
+        <span>📄 文档 · 快查模式</span>
+        <span>WPS 快查 · 选中词汇即刻释义</span>
+        <i>⚡ 与 WPS 快查完全一样的体验</i>
     </div>
 
-    <div class="table-wrapper">
-        <table id="dataTable">
-            <thead>
-            <tr>
-                <th>A <span class="col-sub">仓位</span></th>
-                <th>B <span class="col-sub">编码</span></th>
-                <th>C <span class="col-sub">名称</span></th>
-                <th>D</th>
-                <th>E</th>
-                <th>F</th>
-            </tr>
-            </thead>
-            <tbody id="tableBody">
-            </tbody>
-        </table>
-    </div>
+    <!-- 主体：文档 + 侧边快查 -->
+    <div class="workspace">
+        <!-- 左侧文档区域（可选中文字触发快查） -->
+        <div class="document-panel">
+            <h2>⛰️ 山居笔记 · 节选</h2>
+            <div class="subhead">双击或划词选中 · 右侧快查面板自动更新 (模拟WPS)</div>
 
-    <div class="scan-panel">
-        <div class="scan-header">
-            <h3>
-                <span>📷 扫码录入</span>
-            </h3>
-            <button class="scan-btn" id="startScanBtn">
-                <span>🔍</span> 打开摄像头扫码
-            </button>
-            <button class="clear-btn" id="clearRowBtn">清空当前行</button>
-        </div>
-
-        <!-- 摄像头预览区 -->
-        <div id="scanner-container">
-            <video id="scanner-video" autoplay playsinline></video>
-            <div style="display: flex; gap: 8px; padding: 8px; background: white;">
-                <button id="closeScannerBtn" class="close-scanner">关闭摄像头</button>
-                <span style="flex:1; text-align:center; color:#64748b; align-self:center;">将二维码对准摄像头</span>
+            <div class="doc-content" id="docContent">
+                <p>« 山气日夕佳，飞鸟相与还。此中有真意，欲辨已忘言 »  —— 陶渊明《饮酒》</p>
+                <p>秋天的一个早晨，我推开窗，看见远山蒙着薄雾，<mark data-word="氤氲">氤氲</mark>的水汽缓缓流动。忽然想起王维的句子：「行到水穷处，坐看云起时」。这种<mark data-word="禅意">禅意</mark>，怕只有在中国山水画里才能寻见。友人曾笑我太迷恋古意，我却觉得那些旧书里的文字，是千年不灭的<mark data-word="薪火">薪火</mark>。</p>
+                <p>继续往山里走，路过一座废弃的寺庙，门匾上写着「<mark data-word="灵麓">灵麓</mark>禅寺」。殿内只剩几根石柱，但轮廓依旧<mark data-word="巍然">巍然</mark>。站在庭院里，忽然想起「<mark data-word="刹那">刹那</mark>」这个词。万物都在流转，但有些东西似乎凝固了——比如石缝里的青苔，比如山间的<mark data-word="岚">岚</mark>气。</p>
+                <p>傍晚回到书斋，翻到《世说新语》中一段：「王子猷居山阴，夜大雪……忽忆戴安道，即便夜乘小船就之，经宿方至，造门不前而返。人问其故，王曰：吾本乘兴而行，兴尽而返，何必见戴？」这般<mark data-word="洒脱">洒脱</mark>，令人神往。或许这就是东方特有的<mark data-word="隽永">隽永</mark>。</p>
             </div>
         </div>
 
-        <!-- 手动输入区 -->
-        <div class="manual-input-area">
-            <div class="manual-label">
-                <span>⌨️ 手动输入/粘贴二维码内容</span>
-                <span style="background:#f1f5f9; padding:4px 8px; border-radius:30px; font-size:12px;">格式: 仓位X-X 编码XXXX 名称XXXX</span>
+        <!-- 右侧快查面板 (WPS 快查核心区) -->
+        <div class="quicklook-panel" id="quicklookPanel">
+            <div class="ql-header">
+                <h3><i>📘</i> WPS 快查</h3>
+                <div class="hint">划词即查</div>
             </div>
-            <div class="input-row">
-                <input type="text" id="qrInput" placeholder="例如 仓位A-1 编码12345 名称前杠" autofocus>
-                <button id="manualFillBtn">填入表格</button>
+
+            <!-- 动态快查卡片将显示在这里（由js更新） -->
+            <div id="dynamicInfoCard" class="info-card">
+                <!-- 占位内容 (未选择词汇时显示) -->
+                <div class="placeholder-message">
+                    <span>🔍</span>
+                    在左侧文档中<br>点击或划词查看解释
+                </div>
             </div>
-            <div class="mock-qr-hint" id="mockHint">
-                <span>⬇️ 点击此处模拟扫码</span>
-                <span style="font-weight:500;">仓位A-1 编码12345 名称前杠</span>
+
+            <!-- 附加说明：和WPS一样提供网络释义/知识扩展 (静态装饰) -->
+            <div class="meta-note">
+                <b>📎 关联知识</b> · 文中所有高亮词均可点击。快查内容参考《汉语大词典》《现代汉语词典》以及WPS官方快查风格。点击词汇右侧显示释义、例句、相关词组。
             </div>
         </div>
-    </div>
-
-    <div class="footer-note">
-        <span>✅ 自动归列：仓位→A列，编码→B列，名称→C列。扫码后追加到第一个空白行</span>
-        <span>📱 点击单元格可直接编辑</span>
     </div>
 </div>
 
-<!-- 引入轻量扫码库 jsQR -->
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script>
     (function() {
-        // 显示当前时间
-        function updateTime() {
-            const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            document.getElementById('current-time').textContent = `${hours}:${minutes}`;
-        }
-        updateTime();
-        setInterval(updateTime, 1000);
-
-        // 表格数据
-        const MAX_ROW = 36;
-        let tableData = [];
-        for (let i = 0; i < MAX_ROW; i++) {
-            tableData[i] = ['', '', '', '', '', ''];
-        }
-
-        const tbody = document.getElementById('tableBody');
-        const qrInput = document.getElementById('qrInput');
-        const manualFillBtn = document.getElementById('manualFillBtn');
-        const clearBtn = document.getElementById('clearRowBtn');
-        const startScanBtn = document.getElementById('startScanBtn');
-        const closeScannerBtn = document.getElementById('closeScannerBtn');
-        const scannerContainer = document.getElementById('scanner-container');
-        const scannerVideo = document.getElementById('scanner-video');
-        const mockHint = document.getElementById('mockHint');
-
-        let stream = null;
-        let scanning = false;
-
-        // 渲染表格
-        function renderTable() {
-            let htmlStr = '';
-            for (let r = 0; r < MAX_ROW; r++) {
-                htmlStr += '<tr>';
-                for (let c = 0; c < 6; c++) {
-                    let value = tableData[r][c] || '';
-                    htmlStr += `<td contenteditable="true" data-row="${r}" data-col="${c}">${escapeHtml(value)}</td>`;
-                }
-                htmlStr += '</tr>';
+        // ---------- 丰富的数据词典 (模拟WPS快查侧边栏内容) ----------
+        const dictionary = {
+            // 针对高亮词汇预设详尽的内容
+            '氤氲': {
+                term: '氤氲',
+                phonetic: 'yīn yūn',
+                short: '气韵弥漫',
+                definitions: [
+                    { pos: '形容词', meaning: '形容烟云或雾气浓郁，弥漫飘动。也指天地阴阳之气交合状。' },
+                    { pos: '名词', meaning: '古代指阴阳二气交合之态，引申为迷茫、祥瑞之气。' }
+                ],
+                examples: [
+                    '清晨的山林里云雾氤氲，宛如仙境。',
+                    '《周易》·「天地氤氲，万物化醇。」'
+                ],
+                related: ['氤氲缭绕', '烟岚', '弥漫', '叆叇']
+            },
+            '禅意': {
+                term: '禅意',
+                phonetic: 'chán yì',
+                short: '禅的意境',
+                definitions: [
+                    { pos: '名词', meaning: '佛教禅宗所倡导的空灵、宁静、自在的意境或思想。也泛指带有禅味的趣味。' }
+                ],
+                examples: [
+                    '这幅画寥寥几笔，却充满禅意。',
+                    '园林设计讲究“虽由人作，宛自天开”的禅意。'
+                ],
+                related: ['禅机', '空灵', '静虑', 'zen']
+            },
+            '薪火': {
+                term: '薪火',
+                phonetic: 'xīn huǒ',
+                short: '柴火；比喻传承',
+                definitions: [
+                    { pos: '名词', meaning: '柴火燃烧的火。也比喻学术、技艺、精神代代相传（薪尽火传）。' }
+                ],
+                examples: [
+                    '文化犹如薪火，前辈传至后辈，绵延不绝。',
+                    '《庄子·养生主》：「指穷于为薪，火传也，不知其尽也。」'
+                ],
+                related: ['薪尽火传', '传承', '续焰']
+            },
+            '灵麓': {
+                term: '灵麓',
+                phonetic: 'líng lù',
+                short: '有灵气的山脚',
+                definitions: [
+                    { pos: '名词', meaning: '指山脚有灵秀之气；也借指岳麓山（因岳麓山号称“灵岳”）。在文中为寺庙名。' }
+                ],
+                examples: [
+                    '岳麓山又称“灵麓峰”，自古为读书讲学之地。',
+                    '寺名“灵麓”，取山灵水秀之意。'
+                ],
+                related: ['岳麓山', '钟灵毓秀', '山麓']
+            },
+            '巍然': {
+                term: '巍然',
+                phonetic: 'wēi rán',
+                short: '高大雄伟',
+                definitions: [
+                    { pos: '形容词', meaning: '形容山或建筑物高大雄伟，不可动摇的样子。' }
+                ],
+                examples: [
+                    '天安门城楼巍然屹立。',
+                    '石柱虽残，其势巍然。'
+                ],
+                related: ['巍峨', '屹立', '岿然']
+            },
+            '刹那': {
+                term: '刹那',
+                phonetic: 'chà nà',
+                short: '极短的时间',
+                definitions: [
+                    { pos: '名词', meaning: '梵语音译，表示极短的时间，一念之间。约相当于0.018秒。' }
+                ],
+                examples: [
+                    '刹那芳华，红颜弹指老。',
+                    '《仁王经》：「一念中有九十刹那。」'
+                ],
+                related: ['瞬间', '弹指', '须臾']
+            },
+            '岚': {
+                term: '岚',
+                phonetic: 'lán',
+                short: '山间雾气',
+                definitions: [
+                    { pos: '名词', meaning: '山间的雾气。如：晓岚、山岚、岚气。' }
+                ],
+                examples: [
+                    '山岚像水墨一样氤氲开来。',
+                    '王维诗：「瀑布杉松常带雨，夕阳彩翠忽成岚。」'
+                ],
+                related: ['岚气', '烟岚', '雾霭']
+            },
+            '洒脱': {
+                term: '洒脱',
+                phonetic: 'sǎ tuō',
+                short: '潇洒自然',
+                definitions: [
+                    { pos: '形容词', meaning: '形容言行自然、不拘束，超凡脱俗。' }
+                ],
+                examples: [
+                    '他为人率真洒脱，不为俗事所困。',
+                    '魏晋名士风度洒脱，令人追慕。'
+                ],
+                related: ['潇洒', '超脱', '倜傥']
+            },
+            '隽永': {
+                term: '隽永',
+                phonetic: 'juàn yǒng',
+                short: '意味深长',
+                definitions: [
+                    { pos: '形容词', meaning: '指言语、诗文、艺术等意味深长，耐人寻味。' }
+                ],
+                examples: [
+                    '文章虽短，但意味隽永。',
+                    '那种古典的隽永之美，如今愈发珍贵。'
+                ],
+                related: ['意味深长', '含蓄', '悠远']
             }
-            tbody.innerHTML = htmlStr;
-        }
+        };
 
-        function escapeHtml(unsafe) {
-            if (!unsafe) return '';
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
+        // 获取dom元素
+        const docDiv = document.getElementById('docContent');
+        const dynamicCard = document.getElementById('dynamicInfoCard');
 
-        function attachCellEvents() {
-            const cells = tbody.querySelectorAll('td[contenteditable="true"]');
-            cells.forEach(cell => {
-                cell.addEventListener('input', function() {
-                    const row = parseInt(this.dataset.row);
-                    const col = parseInt(this.dataset.col);
-                    if (!isNaN(row) && !isNaN(col) && row >= 0 && row < MAX_ROW && col >=0 && col <6) {
-                        tableData[row][col] = this.innerText;
-                    }
+        // ---------- 渲染快查卡片 (根据词汇名称) ----------
+        function renderQuickLook(word) {
+            if (!word || !dictionary[word]) {
+                // 如果词不存在或者无查询，显示占位/默认界面
+                dynamicCard.innerHTML = `
+                    <div class="placeholder-message">
+                        <span>📖</span>
+                        “${word ? '暂无释义' : '点击上方词汇'}”<br>
+                        ${word ? '暂未收录该词解释' : '在左侧文档中点击任意高亮词'}
+                    </div>
+                `;
+                return;
+            }
+
+            const data = dictionary[word];
+            // 构建释义html
+            let defHtml = '';
+            data.definitions.forEach(def => {
+                defHtml += `<div class="pos">${def.pos}</div>`;
+                defHtml += `<div class="definition">${def.meaning}</div>`;
+            });
+
+            // 构建例句html
+            let exHtml = '';
+            if (data.examples && data.examples.length) {
+                exHtml += '<div class="example">';
+                data.examples.forEach(ex => {
+                    exHtml += `“${ex}”<br>`;
                 });
+                exHtml += '</div>';
+            }
+
+            // 构建相关词组
+            let relatedHtml = '';
+            if (data.related && data.related.length) {
+                relatedHtml += '<div class="related-box">';
+                data.related.forEach(rel => {
+                    relatedHtml += `<span class="related-item">${rel}</span>`;
+                });
+                relatedHtml += '</div>';
+            }
+
+            // 完整卡片
+            const cardHtml = `
+                <div class="query-term">
+                    ${data.term}
+                    <small>${data.phonetic || ''}</small>
+                </div>
+                <div class="dict-entry">
+                    ${defHtml}
+                </div>
+                ${exHtml}
+                ${relatedHtml}
+                <div style="margin-top: 12px; font-size:13px; color:#6f8ab1; border-left: 2px solid #abc0df; padding-left: 10px;">
+                    ⚡ WPS快查 · 释义来源：汉语大简
+                </div>
+            `;
+            dynamicCard.innerHTML = cardHtml;
+        }
+
+        // ---------- 处理选中/点击词汇 (高亮mark) ----------
+        function handleWordClick(event) {
+            const mark = event.target.closest('mark');  // 确保点击的是mark内部或者本身
+            if (!mark) return;
+
+            const word = mark.getAttribute('data-word');  // 获取词汇标识
+            if (word && dictionary[word]) {
+                renderQuickLook(word);
+            } else {
+                // 如果data-word存在但没字典内容，显示fallback
+                renderQuickLook(null);  // 显示占位，并提示未知词汇
+                // 但是为了更友好，可以显示具体词
+                if (word) {
+                    // 重新使用一个临时版本
+                    dynamicCard.innerHTML = `
+                        <div class="placeholder-message">
+                            <span>🕮</span>
+                            “${word}”<br>快查暂未收录，试试其他词
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // 为所有现有的mark绑定点击事件 (也包括后续动态绑定，但目前静态页面所有mark已经存在)
+        function bindMarkEvents() {
+            const marks = document.querySelectorAll('#docContent mark');
+            marks.forEach(m => {
+                m.removeEventListener('click', handleWordClick); // 防止重复绑定
+                m.addEventListener('click', handleWordClick);
+                // 增加一点样式提示
+                m.style.cursor = 'pointer';
+                m.title = '点击在快查侧栏查看详解';
             });
         }
 
-        function refreshTable() {
-            renderTable();
-            attachCellEvents();
-        }
+        // 初始化：渲染默认占位（没有选中词时）
+        renderQuickLook(null);
+        bindMarkEvents();
 
-        // 解析二维码内容
-        function parseQrContent(qrStr) {
-            if (!qrStr || qrStr.trim() === '') return null;
-            const trimmed = qrStr.trim();
-            
-            const locationMatch = trimmed.match(/仓位[：:]?\s*([^\s]+)/);
-            const idMatch = trimmed.match(/编码[：:]?\s*([^\s]+)/);
-            const nameMatch = trimmed.match(/名称[：:]?\s*([^\s]+)/);
-
-            return {
-                locationCode: locationMatch ? locationMatch[1].trim() : '',
-                idCode: idMatch ? idMatch[1].trim() : '',
-                nameCode: nameMatch ? nameMatch[1].trim() : ''
-            };
-        }
-
-        // 查找第一个空白行
-        function findFirstEmptyRow() {
-            for (let i = 0; i < MAX_ROW; i++) {
-                if (tableData[i][0] === '' && tableData[i][1] === '' && tableData[i][2] === '') {
-                    return i;
+        // 可选：监听鼠标划词选中的文本(模拟WPS划词智能, 但为保持简洁只支持点击mark。但可以附加一个划词后备处理)
+        // 为了更贴近WPS快查的划词体验，简单实现: 当用户抬起鼠标时检测是否有选中文本且包含在某个mark内。 (额外增强)
+        docDiv.addEventListener('mouseup', function(e) {
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+            if (selectedText.length > 0) {
+                // 尝试判断选中文本是否被某个mark包裹或者属于某个词汇 (简单方案：反向查找)
+                // 这里简单处理：如果选中区域完全在一个mark内，就触发对应词汇。
+                let node = selection.anchorNode;
+                if (node && node.nodeType === Node.TEXT_NODE) {
+                    const parent = node.parentNode;
+                    if (parent && parent.tagName === 'MARK') {
+                        const word = parent.getAttribute('data-word');
+                        if (word) {
+                            renderQuickLook(word);
+                            return;
+                        }
+                    }
                 }
-            }
-            return -1;
-        }
-
-        // 填充数据
-        function fillDataToRow(rowIndex, data) {
-            if (rowIndex < 0 || rowIndex >= MAX_ROW) return false;
-            if (data.locationCode) tableData[rowIndex][0] = data.locationCode;
-            if (data.idCode) tableData[rowIndex][1] = data.idCode;
-            if (data.nameCode) tableData[rowIndex][2] = data.nameCode;
-            refreshTable();
-            return true;
-        }
-
-        // 处理扫码结果
-        function handleScannedText(text) {
-            const parsed = parseQrContent(text);
-            if (!parsed || (!parsed.locationCode && !parsed.idCode && !parsed.nameCode)) {
-                alert('未识别到有效的仓位信息，请确保二维码包含仓位、编码、名称');
-                return false;
-            }
-
-            const emptyRow = findFirstEmptyRow();
-            if (emptyRow === -1) {
-                alert('表格已满，请先清空一些行');
-                return false;
-            }
-
-            fillDataToRow(emptyRow, parsed);
-            return true;
-        }
-
-        // 启动摄像头扫码
-        async function startScanner() {
-            try {
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    alert('您的浏览器不支持摄像头访问，请使用手动输入或更换现代浏览器');
-                    return;
+                // 如果划词不是直接mark，但划词文本恰好等于某个词条(扩展)
+                for (let key in dictionary) {
+                    if (selectedText === key) {
+                        renderQuickLook(key);
+                        return;
+                    }
                 }
-
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' }
-                });
-                scannerVideo.srcObject = stream;
-                scannerContainer.style.display = 'block';
-                scanning = true;
-                // 等待视频元数据加载后再开始扫描循环
-                scannerVideo.onloadedmetadata = () => {
-                    scanLoop();
-                };
-            } catch (err) {
-                console.error('启动摄像头失败:', err);
-                alert('无法启动摄像头，请确保已授予摄像头权限或使用手动输入');
-                scannerContainer.style.display = 'none';
-                scanning = false;
-            }
-        }
-
-        // 扫码循环
-        function scanLoop() {
-            if (!scanning) return;
-            const canvas = document.createElement('canvas');
-            const w = scannerVideo.videoWidth;
-            const h = scannerVideo.videoHeight;
-            if (w === 0 || h === 0) {
-                requestAnimationFrame(scanLoop);
-                return;
-            }
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(scannerVideo, 0, 0, w, h);
-            const img = ctx.getImageData(0, 0, w, h);
-            const code = jsQR(img.data, w, h);
-            if (code && code.data) {
-                const result = code.data.trim();
-                stopScanner();
-                handleScannedText(result);
-                return;
-            }
-            requestAnimationFrame(scanLoop);
-        }
-
-        // 停止扫码
-        function stopScanner() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
-            scannerContainer.style.display = 'none';
-            scanning = false;
-        }
-
-        // 事件监听
-        startScanBtn.addEventListener('click', startScanner);
-        closeScannerBtn.addEventListener('click', stopScanner);
-
-        manualFillBtn.addEventListener('click', function() {
-            const text = qrInput.value.trim();
-            if (text) {
-                handleScannedText(text);
-                qrInput.value = '';
+                // 未匹配划词: 可以忽略或显示占位。我们不自动清空，保持原有内容。
             }
         });
 
-        qrInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                manualFillBtn.click();
-            }
-        });
-
-        mockHint.addEventListener('click', function() {
-            handleScannedText('仓位A-1 编码12345 名称前杠');
-        });
-
-        clearBtn.addEventListener('click', function() {
-            for (let i = MAX_ROW - 1; i >= 0; i--) {
-                if (tableData[i][0] !== '' || tableData[i][1] !== '' || tableData[i][2] !== '') {
-                    tableData[i] = ['', '', '', '', '', ''];
-                    refreshTable();
-                    return;
-                }
-            }
-            alert('表格已是空的');
-        });
-
-        // 初始化
-        refreshTable();
+        // 添加一点初始化后点击第一个词汇的引导（可选，让用户立刻看到效果：默认显示第一个词汇? 可以展示氤氲）
+        // 为了让页面一加载就能看到类似WPS快查的样子，可设定一个默认词（例如氤氲）
         setTimeout(() => {
-            if (tableData[0][0] === '' && tableData[0][1] === '' && tableData[0][2] === '') {
-                tableData[0][0] = 'A-1';
-                tableData[0][1] = '12345';
-                tableData[0][2] = '前杠';
-                refreshTable();
-            }
+            // 自动展示一个词汇作为示例
+            renderQuickLook('氤氲');
         }, 100);
     })();
 </script>
+<!-- 额外的笔记：本设计完全参考WPS快查的布局，右侧面板会动态展示词汇释义，带有拼音、词性、例句和相关词。所有高亮词均可点击。 -->
 </body>
 </html>
