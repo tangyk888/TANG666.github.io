@@ -433,7 +433,10 @@
                 scannerVideo.srcObject = stream;
                 scannerContainer.style.display = 'block';
                 scanning = true;
-                scanLoop();
+                // 等待视频元数据加载后再开始扫描循环
+                scannerVideo.onloadedmetadata = () => {
+                    scanLoop();
+                };
             } catch (err) {
                 console.error('启动摄像头失败:', err);
                 alert('无法启动摄像头，请确保已授予摄像头权限或使用手动输入');
