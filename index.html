@@ -1,485 +1,805 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-<title>仓位管理系统</title>
-<style>
-*{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto}
-body{margin:0;background:#f4f5f7;padding:8px}
-
-/* 登录 */
-#loginWrapper{position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{width:90%;max-width:380px;padding:30px;border-radius:16px;background:#f9fafb;text-align:center}
-.login-box h3{margin-bottom:20px;color:#1e293b}
-.login-input{width:100%;padding:12px 16px;border-radius:12px;border:1px solid #cbd5e1;margin-bottom:12px;outline:none;font-size:16px}
-.login-btn{width:100%;padding:12px;border-radius:12px;background:#2563eb;color:white;border:none;font-size:16px;margin-bottom:8px;cursor:pointer}
-.gray-btn{background:#64748b}
-
-/* 弹窗 */
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:99999}
-.modal-body{background:#fff;border-radius:16px;width:90%;max-width:400px;padding:24px;max-height:80vh;overflow-y:auto}
-.modal-body h4{margin-top:0;margin-bottom:16px}
-.user-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee}
-.del-user{color:#ef4444;font-size:14px;cursor:pointer}
-
-/* 主界面 */
-.app-container{width:100%;max-width:1200px;background:white;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.08);overflow:hidden;display:none;margin:0 auto}
-.status-bar {
-    background: #fefefe;
-    padding: 12px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid #e2e6ea;
-    font-size: 15px;
-    font-weight: 500;
-    color: #1e293b;
-}
-.title-scan-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.scan-icon-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #2563eb;
-    color: white;
-    border: none;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-.scan-icon-btn:active {
-    transform: scale(0.95);
-}
-.add-row-btn {
-    background: #10b981;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-    cursor: pointer;
-}
-.del-row-btn {
-    background: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-    cursor: pointer;
-}
-.import-btn {
-    background: #0ea5e9;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-    cursor: pointer;
-}
-.export-btn {
-    background: #f59e0b;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-    cursor: pointer;
-}
-.user-btn {
-    background: #8b5cf6;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-    cursor: pointer;
-}
-.search-bar{padding:12px 20px;border-bottom:1px solid #e2e6ea}
-.search-input{width:100%;padding:10px 16px;border-radius:12px;border:1px solid #cbd5e1;outline:none;font-size:16px}
-
-.table-wrapper{padding:16px 20px;background:white;overflow-x:auto}
-table{width:100%;border-collapse:collapse;background:white;border-radius:18px;font-size:15px;min-width:500px}
-th{background:#f7f9fc;font-weight:600;color:#1e2a3a;border-bottom:2px solid #cdd9e9;padding:14px 8px;text-align:left;border-right:1px solid #e2e8f0}
-td{padding:12px 8px;border-bottom:1px solid #e9edf3;border-right:1px solid #eef2f6;color:#1f2a41;vertical-align:middle}
-th:last-child, td:last-child { border-right: none; }
-.col-sub { font-size: 12px; color: #64748b; margin-left: 6px; }
-
-#scanner-container {
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto 16px auto;
-    display: none;
-    border-radius: 16px;
-    overflow: hidden;
-    border: 2px solid #2563eb;
-}
-#scanner-video {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-.close-scanner {
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 40px;
-    cursor: pointer;
-    font-weight: 600;
-    margin-top: 8px;
-}
-
-.file-input{display:none}
-</style>
-</head>
-
-<body>
-
-<!-- 登录 -->
-<div id="loginWrapper">
-  <div class="login-box">
-    <h3>仓位管理登录</h3>
-    <input class="login-input" id="loginUser" placeholder="用户名" type="text">
-    <input class="login-input" id="loginPwd" placeholder="密码" type="password">
-    <button class="login-btn" onclick="login()">登录</button>
-  </div>
-</div>
-
-<!-- 用户管理 -->
-<div class="modal" id="userModal">
-  <div class="modal-body">
-    <h4>用户管理</h4>
-    <div id="userList"></div>
-    <hr style="margin:16px 0">
-    <input class="login-input" id="newUserName" placeholder="用户名">
-    <input class="login-input" id="newUserPwd" placeholder="密码">
-    <button class="login-btn" onclick="addUser()">添加用户</button>
-    <button class="login-btn gray-btn" style="margin-top:8px" onclick="closeUserModal()">关闭</button>
-  </div>
-</div>
-
-<!-- 主界面 -->
-<div class="app-container" id="mainApp">
-    <div class="status-bar">
-        <div class="title-scan-group">
-            <span style="color:#1e293b;">📦 仓位扫码管理</span>
-            <button class="scan-icon-btn" id="headerScanBtn">📷</button>
-            <button class="add-row-btn" id="addRowBtn">＋</button>
-            <button class="del-row-btn" id="delRowBtn">−</button>
-            <button class="import-btn" onclick="document.getElementById('fileInput').click()">📥</button>
-            <button class="export-btn" onclick="exportExcel()">📤</button>
-            <button class="user-btn" onclick="showUserManage()">👤</button>
-        </div>
-    </div>
-
-    <div class="search-bar">
-        <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜索仓位、编码、名称">
-        <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv" onchange="importExcel(event)">
-    </div>
-
-    <div class="table-wrapper">
-        <table id="dataTable">
-            <thead>
-            <tr>
-                <th>A <span class="col-sub">仓位</span></th>
-                <th>B <span class="col-sub">编码</span></th>
-                <th>C <span class="col-sub">名称</span></th>
-                <th>D</th>
-                <th>E</th>
-                <th>F</th>
-            </tr>
-            </thead>
-            <tbody id="tableBody">
-            </tbody>
-        </table>
-    </div>
-
-    <div id="scanner-container">
-        <video id="scanner-video" autoplay playsinline></video>
-        <div style="display: flex; gap: 8px; padding: 8px; background: white;">
-            <button id="closeScannerBtn" class="close-scanner">关闭摄像头</button>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script>
-// ====================== 用户系统 ======================
-let currentUser = null;
-const ADMIN_USERNAME = "1329923942@qq.com";
-const ADMIN_PASSWORD = "18802595319Xx";
-
-function initUsers() {
-  if (!localStorage.getItem("users")) {
-    const users = [{ username: ADMIN_USERNAME, password: ADMIN_PASSWORD, role: "admin" }];
-    localStorage.setItem("users", JSON.stringify(users));
-  }
-}
-initUsers();
-
-function getUsers() {
-  return JSON.parse(localStorage.getItem("users") || "[]");
-}
-function saveUsers(users) {
-  localStorage.setItem("users", JSON.stringify(users));
-}
-
-function login() {
-  const username = document.getElementById("loginUser").value.trim();
-  const password = document.getElementById("loginPwd").value.trim();
-  const users = getUsers();
-  const u = users.find(x => x.username === username && x.password === password);
-  if (!u) return alert("账号或密码错误");
-  currentUser = u;
-  document.getElementById("loginWrapper").style.display = "none";
-  document.getElementById("mainApp").style.display = "block";
-  loadData();
-}
-
-function showUserManage() {
-  if (!currentUser || currentUser.role !== "admin") {
-    alert("仅管理员可操作");
-    return;
-  }
-  document.getElementById("userModal").style.display = "flex";
-  renderUserList();
-}
-function closeUserModal() {
-  document.getElementById("userModal").style.display = "none";
-}
-function renderUserList() {
-  const users = getUsers();
-  let html = "";
-  users.forEach(u => {
-    html += `
-    <div class="user-item">
-      <div>${u.username} (${u.role||"user"})</div>
-      ${u.username !== ADMIN_USERNAME ? '<div class="del-user" onclick="delUser(\''+u.username+'\')">删除</div>' : ''}
-    </div>`;
-  });
-  document.getElementById("userList").innerHTML = html;
-}
-function addUser() {
-  const username = document.getElementById("newUserName").value.trim();
-  const password = document.getElementById("newUserPwd").value.trim();
-  if (!username || !password) return alert("请输入用户名和密码");
-  const users = getUsers();
-  if (users.some(x => x.username === username)) return alert("用户名已存在");
-  users.push({ username, password, role: "user" });
-  saveUsers(users);
-  renderUserList();
-  document.getElementById("newUserName").value = "";
-  document.getElementById("newUserPwd").value = "";
-}
-function delUser(username) {
-  if (username === ADMIN_USERNAME) return alert("不能删除管理员");
-  if (!confirm("确定删除？")) return;
-  let users = getUsers();
-  users = users.filter(x => x.username !== username);
-  saveUsers(users);
-  renderUserList();
-}
-
-// ====================== 表格与扫码 ======================
-let tableData = [];
-const tbody = document.getElementById('tableBody');
-const headerScanBtn = document.getElementById('headerScanBtn');
-const addRowBtn = document.getElementById('addRowBtn');
-const delRowBtn = document.getElementById('delRowBtn');
-const closeScannerBtn = document.getElementById('closeScannerBtn');
-const scannerContainer = document.getElementById('scanner-container');
-const scannerVideo = document.getElementById('scanner-video');
-const searchInput = document.getElementById('searchInput');
-
-let stream = null;
-let scanning = false;
-
-function escapeHtml(s) {
-    if (!s) return '';
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-}
-
-function renderTable() {
-    let html = '';
-    tableData.forEach((row, r) => {
-        html += '<tr>';
-        for (let c = 0; c < 6; c++) {
-            const val = row[c] || '';
-            html += `<td contenteditable data-row="${r}" data-col="${c}">${escapeHtml(val)}</td>`;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仓位管理系统</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e40af', // 专业仓储蓝
+                        secondary: '#f3f4f6',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-in': 'slideIn 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideIn: {
+                            '0%': { transform: 'translateY(-10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                    },
+                }
+            }
         }
-        html += '</tr>';
-    });
-    tbody.innerHTML = html;
-}
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.25);
+                backdrop-filter: blur(4px);
+                -webkit-backdrop-filter: blur(4px);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+            }
+            .table-shadow {
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            }
+            .btn-scan {
+                transition: all 0.3s ease;
+            }
+            .btn-scan:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(30, 64, 175, 0.3);
+            }
+            .btn-scan:active {
+                transform: translateY(0);
+            }
+            .cell-highlight {
+                animation: highlight 1s ease-in-out;
+            }
+            @keyframes highlight {
+                0% { background-color: rgba(16, 185, 129, 0.2); }
+                50% { background-color: rgba(16, 185, 129, 0.5); }
+                100% { background-color: transparent; }
+            }
+            .separator-input {
+                width: 2rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 顶部标题和操作区 -->
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h1 class="text-3xl font-bold text-primary flex items-center">
+                        <i class="fa fa-cubes mr-3"></i>
+                        仓位管理系统
+                    </h1>
+                    <p class="text-gray-600 mt-1">高效管理仓库仓位信息</p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                    <!-- 分隔符设置 -->
+                    <div class="flex items-center bg-white p-2 rounded-lg shadow-sm">
+                        <span class="text-gray-700 mr-2">分隔符:</span>
+                        <input type="text" id="separator" value=" " class="separator-input border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary" maxlength="1">
+                    </div>
+                    
+                    <!-- 扫描按钮 -->
+                    <button id="scanBtn" class="btn-scan bg-primary hover:bg-primary/90 text-white py-2 px-6 rounded-lg shadow-lg flex items-center justify-center">
+                        <i class="fa fa-qrcode mr-2"></i>
+                        扫描二维码
+                    </button>
+                    
+                    <!-- 手动输入按钮 -->
+                    <button id="manualInputBtn" class="bg-secondary hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg shadow flex items-center justify-center">
+                        <i class="fa fa-keyboard-o mr-2"></i>
+                        手动输入
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 主要内容区 - 表格 -->
+        <main class="bg-white rounded-xl p-6 table-shadow mb-8">
+            <div class="overflow-x-auto">
+                <table id="warehouseTable" class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700">仓位</th>
+                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700">编码</th>
+                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700">名称</th>
+                            <th class="border border-gray-300 px-4 py-3 text-center text-gray-700 w-16">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- 表格数据将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 空状态提示 -->
+            <div id="emptyState" class="text-center py-12 hidden">
+                <i class="fa fa-box-open text-5xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-lg">暂无数据，请扫描二维码或手动输入</p>
+            </div>
+        </main>
+        
+        <!-- 详细信息表格 -->
+        <main id="detailsSection" class="bg-white rounded-xl p-6 table-shadow mb-8 hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fa fa-info-circle mr-2 text-primary"></i>
+                详细信息
+            </h2>
+            <div class="overflow-x-auto">
+                <table id="detailsTable" class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700 w-1/4">字段</th>
+                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700">内容</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailsTableBody">
+                        <!-- 详细信息将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+        
+        <!-- 底部状态栏 -->
+        <footer class="bg-white rounded-lg p-4 shadow-sm flex justify-between items-center">
+            <div class="text-gray-600">
+                <span id="totalItems">总物品数: 0</span>
+            </div>
+            <div class="flex items-center">
+                <button id="exportBtn" class="text-primary hover:text-primary/80 flex items-center mr-6">
+                    <i class="fa fa-download mr-1"></i>
+                    导出数据
+                </button>
+                <button id="clearBtn" class="text-danger hover:text-danger/80 flex items-center">
+                    <i class="fa fa-trash mr-1"></i>
+                    清空数据
+                </button>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- 手动输入模态框 -->
+    <div id="manualInputModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md animate-fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">手动输入信息</h2>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="locationInput" class="block text-gray-700 mb-1">仓位:</label>
+                    <input type="text" id="locationInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="例如: A-1">
+                </div>
+                
+                <div>
+                    <label for="codeInput" class="block text-gray-700 mb-1">编码:</label>
+                    <input type="text" id="codeInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="例如: 12345">
+                </div>
+                
+                <div>
+                    <label for="nameInput" class="block text-gray-700 mb-1">名称:</label>
+                    <input type="text" id="nameInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="例如: 前杠">
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button id="cancelInput" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100">
+                        取消
+                    </button>
+                    <button id="confirmInput" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+                        确认
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 扫描结果提示 -->
+    <div id="scanResultToast" class="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50 max-w-xs">
+        <div class="flex items-start">
+            <div id="toastIcon" class="mr-3 mt-0.5 text-success">
+                <i class="fa fa-check-circle text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h4 id="toastTitle" class="font-medium text-gray-900">扫描成功</h4>
+                <p id="toastMessage" class="text-sm text-gray-600 mt-1">数据已添加到表格</p>
+            </div>
+            <button id="closeToast" class="text-gray-400 hover:text-gray-600">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </div>
 
-function attachCellEvents() {
-    tbody.querySelectorAll('td').forEach(cell => {
-        cell.addEventListener('input', function() {
-            const r = +this.dataset.row;
-            const c = +this.dataset.col;
-            if (tableData[r]) tableData[r][c] = this.innerText;
-            saveData();
+    <script>
+        // 全局变量
+        let warehouseData = [];
+        let nextRowId = 1;
+        
+        // DOM 元素
+        const tableBody = document.getElementById('tableBody');
+        const emptyState = document.getElementById('emptyState');
+        const totalItems = document.getElementById('totalItems');
+        const separatorInput = document.getElementById('separator');
+        const scanBtn = document.getElementById('scanBtn');
+        const manualInputBtn = document.getElementById('manualInputBtn');
+        const manualInputModal = document.getElementById('manualInputModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelInput = document.getElementById('cancelInput');
+        const confirmInput = document.getElementById('confirmInput');
+        const locationInput = document.getElementById('locationInput');
+        const codeInput = document.getElementById('codeInput');
+        const nameInput = document.getElementById('nameInput');
+        const scanResultToast = document.getElementById('scanResultToast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const closeToast = document.getElementById('closeToast');
+        const exportBtn = document.getElementById('exportBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const detailsSection = document.getElementById('detailsSection');
+        const detailsTableBody = document.getElementById('detailsTableBody');
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 从本地存储加载数据
+            loadDataFromLocalStorage();
+            // 更新表格显示
+            updateTableDisplay();
+            // 绑定事件
+            bindEvents();
         });
-    });
-}
-
-function refresh() {
-    renderTable();
-    attachCellEvents();
-}
-
-// 扫码规则与你提供的代码完全一致
-function parseQr(s) {
-    if (!s) return null;
-    const loc = s.match(/仓位[：:]?\s*(\S+)/);
-    const id  = s.match(/编码[：:]?\s*(\S+)/);
-    const name = s.match(/名称[：:]?\s*(\S+)/);
-    return {
-        location: loc ? loc[1] : '',
-        code: id ? id[1] : '',
-        name: name ? name[1] : ''
-    };
-}
-
-function addEmptyRow() {
-    tableData.push(['', '', '', '', '', '']);
-    saveData();
-    refresh();
-}
-
-function deleteLastRow() {
-    if (tableData.length === 0) return;
-    if (!confirm("确定删除最后一行？")) return;
-    tableData.pop();
-    saveData();
-    refresh();
-}
-
-function addRow(data) {
-    tableData.push([
-        data.location,
-        data.code,
-        data.name,
-        '', '', ''
-    ]);
-    saveData();
-    refresh();
-}
-
-function handleScan(text) {
-    const d = parseQr(text);
-    if (!d) return;
-    addRow(d);
-}
-
-async function startScanner() {
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' }
-        });
-        scannerVideo.srcObject = stream;
-        scannerContainer.style.display = 'block';
-        scanning = true;
-        scannerVideo.onloadedmetadata = scanLoop;
-    } catch (e) {
-        alert('摄像头权限失败');
-        scannerContainer.style.display = 'none';
-    }
-}
-
-function scanLoop() {
-    if (!scanning) return;
-    const w = scannerVideo.videoWidth;
-    const h = scannerVideo.videoHeight;
-    if (!w || !h) return requestAnimationFrame(scanLoop);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(scannerVideo, 0,0,w,h);
-    const code = jsQR(ctx.getImageData(0,0,w,h).data, w,h);
-    if (code && code.data) {
-        stopScanner();
-        handleScan(code.data.trim());
-        return;
-    }
-    requestAnimationFrame(scanLoop);
-}
-
-function stopScanner() {
-    if (stream) stream.getTracks().forEach(t => t.stop());
-    scannerContainer.style.display = 'none';
-    scanning = false;
-}
-
-// 搜索
-searchInput.addEventListener('input', () => {
-    const kw = searchInput.value.toLowerCase().trim();
-    tbody.querySelectorAll('tr').forEach((tr, i) => {
-        const t = tableData[i];
-        if (!t) return;
-        const txt = (t[0]+' '+t[1]+' '+t[2]).toLowerCase();
-        tr.style.display = !kw || txt.includes(kw) ? '' : 'none';
-    });
-});
-
-// Excel
-function importExcel(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(ev) {
-        const wb = XLSX.read(ev.target.result, { type: 'binary' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const arr = XLSX.utils.sheet_to_json(ws, { header: 1 });
-        arr.shift();
-        tableData = arr.filter(r=>r.length>0).map(r=>[
-            r[0]||"",r[1]||"",r[2]||"",r[3]||"",r[4]||"",r[5]||""
-        ]);
-        saveData();
-        refresh();
-        alert("导入成功");
-    };
-    reader.readAsBinaryString(file);
-}
-
-function exportExcel() {
-    const ws = XLSX.utils.aoa_to_sheet([["仓位","编码","名称","D","E","F"],...tableData]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "仓位数据");
-    XLSX.writeFile(wb, "仓位数据.xlsx");
-}
-
-function saveData() {
-    localStorage.setItem("tableData", JSON.stringify(tableData));
-}
-
-function loadData() {
-    tableData = JSON.parse(localStorage.getItem("tableData") || "[]");
-    if (tableData.length === 0) {
-        tableData = [['A-1','12345','前杠','','','']];
-    }
-    refresh();
-}
-
-headerScanBtn.addEventListener('click', startScanner);
-closeScannerBtn.addEventListener('click', stopScanner);
-addRowBtn.addEventListener('click', addEmptyRow);
-delRowBtn.addEventListener('click', deleteLastRow);
-</script>
+        
+        // 绑定事件
+        function bindEvents() {
+            // 扫描按钮点击事件
+            scanBtn.addEventListener('click', startScan);
+            
+            // 手动输入按钮点击事件
+            manualInputBtn.addEventListener('click', () => {
+                manualInputModal.classList.remove('hidden');
+            });
+            
+            // 关闭模态框
+            closeModal.addEventListener('click', () => {
+                manualInputModal.classList.add('hidden');
+                clearManualInputs();
+            });
+            
+            cancelInput.addEventListener('click', () => {
+                manualInputModal.classList.add('hidden');
+                clearManualInputs();
+            });
+            
+            // 确认手动输入
+            confirmInput.addEventListener('click', () => {
+                let location = locationInput.value.trim();
+                let code = codeInput.value.trim();
+                let name = nameInput.value.trim();
+                
+                if (!location && !code && !name) {
+                    showToast('输入错误', '请至少填写一个字段', 'error');
+                    return;
+                }
+                
+                // 不再截断编码，保持完整内容以便在详细信息中显示
+                
+                // 构建数据字符串并处理
+                const separator = separatorInput.value || ' ';
+                const content = `${location}${separator}${code}${separator}${name}`;
+                processScanData(content);
+                
+                manualInputModal.classList.add('hidden');
+                clearManualInputs();
+            });
+            
+            // 关闭提示框
+            closeToast.addEventListener('click', hideToast);
+            
+            // 导出数据
+            exportBtn.addEventListener('click', exportData);
+            
+            // 清空数据
+            clearBtn.addEventListener('click', clearData);
+            
+            // 分隔符输入变化
+            separatorInput.addEventListener('input', (e) => {
+                if (e.target.value.length > 1) {
+                    e.target.value = e.target.value.charAt(0);
+                }
+            });
+        }
+        
+        // 模拟扫描二维码（实际项目中应替换为真实的扫码库）
+        function startScan() {
+            // 模拟二维码扫描延迟
+            scanBtn.disabled = true;
+            scanBtn.classList.add('opacity-70');
+            scanBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>扫描中...';
+            
+            // 模拟扫描过程（实际项目中应替换为真实的扫码调用）
+            setTimeout(() => {
+                // 模拟二维码内容（实际项目中应从扫码库获取）
+                const mockQrCodeData = generateMockQrCodeData();
+                
+                // 处理扫描数据
+                processScanData(mockQrCodeData);
+                
+                // 恢复按钮状态
+                scanBtn.disabled = false;
+                scanBtn.classList.remove('opacity-70');
+                scanBtn.innerHTML = '<i class="fa fa-qrcode mr-2"></i>扫描二维码';
+            }, 1500);
+        }
+        
+        // 生成模拟二维码数据（仅用于演示）
+        function generateMockQrCodeData() {
+            const locations = ['A-1', 'A-2', 'B-1', 'B-2', 'C-1', 'C-2', 'D-1', 'D-2'];
+            const codes = ['12345', '67890', '11223', '33445', '55667', '77889', '99001', '12345'];
+            const names = ['前杠', '后杠', '左车门', '右车门', '发动机', '变速箱', '方向盘', '座椅'];
+            
+            const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+            const randomCode = codes[Math.floor(Math.random() * codes.length)];
+            const randomName = names[Math.floor(Math.random() * names.length)];
+            
+            const separator = separatorInput.value || ' ';
+            return `${randomLocation}${separator}${randomCode}${separator}${randomName}`;
+        }
+        
+        // 处理扫描数据
+        function processScanData(data) {
+            try {
+                const separator = separatorInput.value || ' ';
+                const parts = data.split(separator).filter(part => part.trim() !== '');
+                
+                if (parts.length < 3) {
+                    showToast('扫描失败', '二维码格式不正确，需要包含仓位、编码和名称', 'error');
+                    return;
+                }
+                
+                // 确保正确解析数据，避免编码数据显示到名称字段
+                const location = parts[0].trim();
+                const code = parts[1].trim();
+                // 只使用第三个及以后的部分作为名称
+                const name = parts.slice(2).join(' ').trim();
+                
+                // 检查是否已存在相同仓位
+                const existingIndex = warehouseData.findIndex(item => item.location === location);
+                
+                if (existingIndex >= 0) {
+                    // 更新现有记录
+                    warehouseData[existingIndex] = {
+                        id: warehouseData[existingIndex].id,
+                        location,
+                        code,
+                        name,
+                        updatedAt: new Date().toISOString()
+                    };
+                    showToast('更新成功', `仓位 ${location} 的信息已更新`, 'success');
+                } else {
+                    // 添加新记录
+                    warehouseData.push({
+                        id: nextRowId++,
+                        location,
+                        code,
+                        name,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                    showToast('扫描成功', '数据已添加到表格', 'success');
+                }
+                
+                // 更新表格显示
+                updateTableDisplay();
+                // 保存到本地存储
+                saveDataToLocalStorage();
+                
+                // 高亮显示新添加或更新的行
+                setTimeout(() => {
+                    const rowElement = document.querySelector(`[data-row-id="${existingIndex >= 0 ? warehouseData[existingIndex].id : warehouseData[warehouseData.length - 1].id}"]`);
+                    if (rowElement) {
+                        const cells = rowElement.querySelectorAll('td:not(:last-child)');
+                        cells.forEach(cell => {
+                            cell.classList.add('cell-highlight');
+                            setTimeout(() => cell.classList.remove('cell-highlight'), 1000);
+                        });
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('处理扫描数据时出错:', error);
+                showToast('处理失败', '无法处理扫描数据，请检查二维码格式', 'error');
+            }
+        }
+        
+        // 更新表格显示
+        function updateTableDisplay() {
+            // 清空表格
+            tableBody.innerHTML = '';
+            
+            if (warehouseData.length === 0) {
+                // 显示空状态
+                emptyState.classList.remove('hidden');
+                totalItems.textContent = '总物品数: 0';
+                return;
+            }
+            
+            // 隐藏空状态
+            emptyState.classList.add('hidden');
+            totalItems.textContent = `总物品数: ${warehouseData.length}`;
+            
+            // 添加数据行
+            warehouseData.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-colors';
+                row.setAttribute('data-row-id', item.id);
+                
+                row.innerHTML = `
+                    <td class="border border-gray-300 px-0 py-0">
+                        <input type="text" class="w-full px-4 py-3 border-none focus:outline-none focus:ring-2 focus:ring-primary cell-input" data-id="${item.id}" data-field="location" value="${item.location}">
+                    </td>
+                    <td class="border border-gray-300 px-0 py-0">
+                        <input type="text" class="w-full px-4 py-3 border-none focus:outline-none focus:ring-2 focus:ring-primary cell-input truncate" data-id="${item.id}" data-field="code" value="${item.code}" title="${item.code}">
+                    </td>
+                    <td class="border border-gray-300 px-0 py-0">
+                        <input type="text" class="w-full px-4 py-3 border-none focus:outline-none focus:ring-2 focus:ring-primary cell-input truncate" data-id="${item.id}" data-field="name" value="${item.name}" maxlength="50" title="${item.name}">
+                    </td>
+                    <td class="border border-gray-300 px-4 py-3 text-center">
+                        <div class="flex justify-center space-x-2">
+                            <button class="text-primary hover:text-primary/80 detail-btn" data-id="${item.id}">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                            <button class="text-success hover:text-success/80 save-btn hidden" data-id="${item.id}">
+                                <i class="fa fa-save"></i>
+                            </button>
+                            <button class="text-danger hover:text-danger/80 delete-btn" data-id="${item.id}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // 绑定删除按钮事件
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
+                    deleteItem(id);
+                });
+            });
+            
+            // 绑定详情按钮事件
+            document.querySelectorAll('.detail-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
+                    showDetails(id);
+                });
+            });
+            
+            // 绑定单元格输入事件
+            document.querySelectorAll('.cell-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const id = parseInt(e.target.getAttribute('data-id'));
+                    const saveBtn = document.querySelector(`.save-btn[data-id="${id}"]`);
+                    if (saveBtn) {
+                        saveBtn.classList.remove('hidden');
+                    }
+                });
+                
+                // 按Enter键保存
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        const id = parseInt(e.target.getAttribute('data-id'));
+                        saveCellChanges(id);
+                    }
+                });
+                
+                // 按Escape键取消编辑
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        const id = parseInt(e.target.getAttribute('data-id'));
+                        cancelCellChanges(id);
+                    }
+                });
+            });
+            
+            // 绑定保存按钮事件
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
+                    saveCellChanges(id);
+                });
+            });
+        }
+        
+        // 删除项目
+        function deleteItem(id) {
+            const index = warehouseData.findIndex(item => item.id === id);
+            if (index !== -1) {
+                const location = warehouseData[index].location;
+                warehouseData.splice(index, 1);
+                updateTableDisplay();
+                saveDataToLocalStorage();
+                showToast('删除成功', `已删除仓位 ${location} 的记录`, 'info');
+            }
+        }
+        
+        // 显示提示框
+        function showToast(title, message, type = 'success') {
+            // 设置图标和颜色
+            if (type === 'success') {
+                toastIcon.className = 'mr-3 mt-0.5 text-success';
+                toastIcon.innerHTML = '<i class="fa fa-check-circle text-xl"></i>';
+            } else if (type === 'error') {
+                toastIcon.className = 'mr-3 mt-0.5 text-danger';
+                toastIcon.innerHTML = '<i class="fa fa-exclamation-circle text-xl"></i>';
+            } else if (type === 'info') {
+                toastIcon.className = 'mr-3 mt-0.5 text-blue-500';
+                toastIcon.innerHTML = '<i class="fa fa-info-circle text-xl"></i>';
+            }
+            
+            // 设置标题和消息
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            
+            // 显示提示框
+            scanResultToast.classList.remove('translate-y-20', 'opacity-0');
+            
+            // 3秒后自动隐藏
+            clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(hideToast, 3000);
+        }
+        
+        // 隐藏提示框
+        function hideToast() {
+            scanResultToast.classList.add('translate-y-20', 'opacity-0');
+        }
+        
+        // 导出数据为CSV
+        function exportData() {
+            if (warehouseData.length === 0) {
+                showToast('导出失败', '没有数据可导出', 'error');
+                return;
+            }
+            
+            // 创建CSV内容
+            let csvContent = "仓位,编码,名称\n";
+            
+            warehouseData.forEach(item => {
+                csvContent += `${item.location},${item.code},${item.name}\n`;
+            });
+            
+            // 创建Blob对象
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `仓位管理数据_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('导出成功', '数据已导出为CSV文件', 'success');
+        }
+        
+        // 清空数据
+        function clearData() {
+            if (warehouseData.length === 0) {
+                showToast('提示', '数据已为空', 'info');
+                return;
+            }
+            
+            if (confirm('确定要清空所有数据吗？此操作不可恢复。')) {
+                warehouseData = [];
+                nextRowId = 1;
+                updateTableDisplay();
+                clearDetailsTable();
+                saveDataToLocalStorage();
+                showToast('清空成功', '所有数据已清空', 'info');
+            }
+        }
+        
+        // 显示详情
+        function showDetails(id) {
+            const item = warehouseData.find(item => item.id === id);
+            if (!item) return;
+            
+            // 清空详情表格
+            detailsTableBody.innerHTML = '';
+            detailsTableBody.setAttribute('data-item-id', item.id);
+            
+            // 添加详情行
+            const details = [
+                { field: '仓位', value: item.location },
+                { field: '编码', value: item.code },
+                { field: '名称', value: item.name },
+                { field: '创建时间', value: formatDateTime(item.createdAt) },
+                { field: '更新时间', value: formatDateTime(item.updatedAt) }
+            ];
+            
+            details.forEach(detail => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-colors';
+                
+                row.innerHTML = `
+                    <td class="border border-gray-300 px-4 py-3 font-medium">${detail.field}</td>
+                    <td class="border border-gray-300 px-4 py-3">${detail.value}</td>
+                `;
+                
+                detailsTableBody.appendChild(row);
+            });
+            
+            // 显示详情区域
+            detailsSection.classList.remove('hidden');
+            
+            // 滚动到详情区域
+            detailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // 清空详情表格
+        function clearDetailsTable() {
+            detailsTableBody.innerHTML = '';
+            detailsSection.classList.add('hidden');
+        }
+        
+        // 格式化日期时间
+        function formatDateTime(dateTimeString) {
+            const date = new Date(dateTimeString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        // 清空手动输入框
+        function clearManualInputs() {
+            locationInput.value = '';
+            codeInput.value = '';
+            nameInput.value = '';
+        }
+        
+        // 保存单元格更改
+        function saveCellChanges(id) {
+            const item = warehouseData.find(item => item.id === id);
+            if (!item) return;
+            
+            // 获取所有输入框
+            const inputs = document.querySelectorAll(`.cell-input[data-id="${id}"]`);
+            let hasChanges = false;
+            
+            // 更新数据
+            inputs.forEach(input => {
+                const field = input.getAttribute('data-field');
+                const value = input.value.trim();
+                
+                // 编码字段不再限制长度，保持完整内容以便在详细信息中显示
+                if (field === 'code') {
+                    if (item[field] !== value) {
+                        item[field] = value;
+                        hasChanges = true;
+                    }
+                } 
+                // 处理名称过长的情况，添加title属性以便悬停查看完整内容
+                else if (field === 'name') {
+                    if (item[field] !== value) {
+                        item[field] = value;
+                        input.setAttribute('title', value);
+                        hasChanges = true;
+                    }
+                }
+                // 其他字段正常更新
+                else if (item[field] !== value) {
+                    item[field] = value;
+                    hasChanges = true;
+                }
+            });
+            
+            if (hasChanges) {
+                // 更新时间戳
+                item.updatedAt = new Date().toISOString();
+                
+                // 保存到本地存储
+                saveDataToLocalStorage();
+                
+                // 隐藏保存按钮
+                const saveBtn = document.querySelector(`.save-btn[data-id="${id}"]`);
+                if (saveBtn) {
+                    saveBtn.classList.add('hidden');
+                }
+                
+                // 显示成功提示
+                showToast('更新成功', '数据已保存', 'success');
+                
+                // 如果详情面板打开，更新详情
+                if (!detailsSection.classList.contains('hidden')) {
+                    const currentDetailId = detailsTableBody.getAttribute('data-item-id');
+                    if (currentDetailId && parseInt(currentDetailId) === id) {
+                        showDetails(id);
+                    }
+                }
+            }
+        }
+        
+        // 取消单元格更改
+        function cancelCellChanges(id) {
+            const item = warehouseData.find(item => item.id === id);
+            if (!item) return;
+            
+            // 恢复原始值
+            const inputs = document.querySelectorAll(`.cell-input[data-id="${id}"]`);
+            inputs.forEach(input => {
+                const field = input.getAttribute('data-field');
+                input.value = item[field];
+            });
+            
+            // 隐藏保存按钮
+            const saveBtn = document.querySelector(`.save-btn[data-id="${id}"]`);
+            if (saveBtn) {
+                saveBtn.classList.add('hidden');
+            }
+        }
+        
+        // 保存数据到本地存储
+        function saveDataToLocalStorage() {
+            try {
+                localStorage.setItem('warehouseData', JSON.stringify(warehouseData));
+                localStorage.setItem('nextRowId', nextRowId.toString());
+            } catch (error) {
+                console.error('保存数据到本地存储时出错:', error);
+            }
+        }
+        
+        // 从本地存储加载数据
+        function loadDataFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('warehouseData');
+                const savedNextRowId = localStorage.getItem('nextRowId');
+                
+                if (savedData) {
+                    warehouseData = JSON.parse(savedData);
+                }
+                
+                if (savedNextRowId) {
+                    nextRowId = parseInt(savedNextRowId);
+                }
+            } catch (error) {
+                console.error('从本地存储加载数据时出错:', error);
+                warehouseData = [];
+                nextRowId = 1;
+            }
+        }
+    </script>
 </body>
 </html>
