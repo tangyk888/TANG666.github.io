@@ -54,14 +54,13 @@ td{padding:12px 8px;border-bottom:1px solid #e2e6ea}
 
 <body>
 
-<!-- 登录 -->
+<!-- 登录：已删除用户管理按钮 -->
 <div id="loginWrapper">
   <div class="login-box">
     <h3>仓位管理登录</h3>
     <input class="login-input" id="loginUser" placeholder="用户名" type="text">
     <input class="login-input" id="loginPwd" placeholder="密码" type="password">
     <button class="login-btn" onclick="login()">登录</button>
-    <button class="login-btn gray-btn" onclick="showUserManage()">用户管理</button>
   </div>
 </div>
 
@@ -116,10 +115,12 @@ td{padding:12px 8px;border-bottom:1px solid #e2e6ea}
 <script>
 // ====================== 用户系统 ======================
 let currentUser = null;
+const ADMIN_USERNAME = "1329923942@qq.com";
+const ADMIN_PASSWORD = "18802595319Xx";
 
 function initUsers() {
   if (!localStorage.getItem("users")) {
-    const users = [{ username: "1329923942@qq.com", password: "18802595319Xx", role: "admin" }];
+    const users = [{ username: ADMIN_USERNAME, password: ADMIN_PASSWORD, role: "admin" }];
     localStorage.setItem("users", JSON.stringify(users));
   }
 }
@@ -161,7 +162,7 @@ function renderUserList() {
     html += `
     <div class="user-item">
       <div>${u.username} (${u.role||"user"})</div>
-      ${u.username !== "1329923942@qq.com" ? '<div class="del-user" onclick="delUser(\''+u.username+'\')">删除</div>' : ''}
+      ${u.username !== ADMIN_USERNAME ? '<div class="del-user" onclick="delUser(\''+u.username+'\')">删除</div>' : ''}
     </div>`;
   });
   document.getElementById("userList").innerHTML = html;
@@ -179,7 +180,7 @@ function addUser() {
   document.getElementById("newUserPwd").value = "";
 }
 function delUser(username) {
-  if (username === "1329923942@qq.com") return alert("不能删除管理员");
+  if (username === ADMIN_USERNAME) return alert("不能删除管理员");
   if (!confirm("确定删除？")) return;
   let users = getUsers();
   users = users.filter(x => x.username !== username);
