@@ -25,28 +25,122 @@ body{margin:0;background:#f4f5f7;padding:8px}
 
 /* 主界面 */
 .app-container{width:100%;max-width:1200px;background:white;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.08);overflow:hidden;display:none;margin:0 auto}
-.top-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid #e2e6ea}
-.title{font-size:16px;font-weight:500;color:#1e293b}
-.btns{display:flex;gap:8px}
-.btn-circle{width:36px;height:36px;border-radius:50%;border:none;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.btn-add{background:#10b981}
-.btn-scan{background:#2563eb}
-.btn-user{background:#8b5cf6}
-.btn-del{background:#ef4444}
-.btn-import{background:#0ea5e9}
-.btn-export{background:#f59e0b}
-
+.status-bar {
+    background: #fefefe;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e2e6ea;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1e293b;
+}
+.title-scan-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.scan-icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: white;
+    border: none;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.scan-icon-btn:active {
+    transform: scale(0.95);
+}
+.add-row-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+}
+.del-row-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+}
+.import-btn {
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+}
+.export-btn {
+    background: #f59e0b;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+}
+.user-btn {
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+}
 .search-bar{padding:12px 20px;border-bottom:1px solid #e2e6ea}
 .search-input{width:100%;padding:10px 16px;border-radius:12px;border:1px solid #cbd5e1;outline:none;font-size:16px}
 
-.table-wrapper{padding:16px 20px}
-table{width:100%;border-collapse:collapse}
-th{background:#f7f9fc;padding:12px 8px;text-align:left;border-bottom:2px solid #cbd5e1}
-td{padding:12px 8px;border-bottom:1px solid #e2e6ea}
+.table-wrapper{padding:16px 20px;background:white;overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:white;border-radius:18px;font-size:15px;min-width:500px}
+th{background:#f7f9fc;font-weight:600;color:#1e2a3a;border-bottom:2px solid #cdd9e9;padding:14px 8px;text-align:left;border-right:1px solid #e2e8f0}
+td{padding:12px 8px;border-bottom:1px solid #e9edf3;border-right:1px solid #eef2f6;color:#1f2a41;vertical-align:middle}
+th:last-child, td:last-child { border-right: none; }
+.col-sub { font-size: 12px; color: #64748b; margin-left: 6px; }
 
-#scanner{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;display:none;flex-direction:column;z-index:9999}
-#video{width:100%;height:80vh}
-#closeScan{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;background:#ef4444;color:white;border:none;border-radius:8px}
+#scanner-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto 16px auto;
+    display: none;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 2px solid #2563eb;
+}
+#scanner-video {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+.close-scanner {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 40px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 8px;
+}
 
 .file-input{display:none}
 </style>
@@ -54,7 +148,7 @@ td{padding:12px 8px;border-bottom:1px solid #e2e6ea}
 
 <body>
 
-<!-- 登录：已删除用户管理按钮 -->
+<!-- 登录 -->
 <div id="loginWrapper">
   <div class="login-box">
     <h3>仓位管理登录</h3>
@@ -77,37 +171,48 @@ td{padding:12px 8px;border-bottom:1px solid #e2e6ea}
   </div>
 </div>
 
-<!-- 扫码 -->
-<div id="scanner">
-  <video id="video" autoplay playsinline></video>
-  <button id="closeScan" onclick="closeScanner()">关闭</button>
-</div>
-
 <!-- 主界面 -->
 <div class="app-container" id="mainApp">
-  <div class="top-bar">
-    <div class="title">📦 仓位扫码管理</div>
-    <div class="btns">
-      <button class="btn-circle btn-add" onclick="addRow()">＋</button>
-      <button class="btn-circle btn-del" onclick="deleteLastRow()">−</button>
-      <button class="btn-circle btn-import" onclick="document.getElementById('fileInput').click()">📥</button>
-      <button class="btn-circle btn-export" onclick="exportExcel()">📤</button>
-      <button class="btn-circle btn-scan" onclick="openScanner()">📷</button>
-      <button class="btn-circle btn-user" onclick="showUserManage()">👤</button>
+    <div class="status-bar">
+        <div class="title-scan-group">
+            <span style="color:#1e293b;">📦 仓位扫码管理</span>
+            <button class="scan-icon-btn" id="headerScanBtn">📷</button>
+            <button class="add-row-btn" id="addRowBtn">＋</button>
+            <button class="del-row-btn" id="delRowBtn">−</button>
+            <button class="import-btn" onclick="document.getElementById('fileInput').click()">📥</button>
+            <button class="export-btn" onclick="exportExcel()">📤</button>
+            <button class="user-btn" onclick="showUserManage()">👤</button>
+        </div>
     </div>
-  </div>
-  <div class="search-bar">
-    <input class="search-input" id="search" placeholder="搜索仓位/编码/名称">
-    <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv" onchange="importExcel(event)">
-  </div>
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr><th>仓位</th><th>编码</th><th>名称</th><th>D</th><th>E</th><th>F</th></tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
+
+    <div class="search-bar">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜索仓位、编码、名称">
+        <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv" onchange="importExcel(event)">
+    </div>
+
+    <div class="table-wrapper">
+        <table id="dataTable">
+            <thead>
+            <tr>
+                <th>A <span class="col-sub">仓位</span></th>
+                <th>B <span class="col-sub">编码</span></th>
+                <th>C <span class="col-sub">名称</span></th>
+                <th>D</th>
+                <th>E</th>
+                <th>F</th>
+            </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <div id="scanner-container">
+        <video id="scanner-video" autoplay playsinline></video>
+        <div style="display: flex; gap: 8px; padding: 8px; background: white;">
+            <button id="closeScannerBtn" class="close-scanner">关闭摄像头</button>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -142,6 +247,7 @@ function login() {
   currentUser = u;
   document.getElementById("loginWrapper").style.display = "none";
   document.getElementById("mainApp").style.display = "block";
+  loadData();
 }
 
 function showUserManage() {
@@ -188,107 +294,192 @@ function delUser(username) {
   renderUserList();
 }
 
-// ====================== 表格 ======================
-let data = [];
-function loadData() {
-  data = JSON.parse(localStorage.getItem("tableData") || "[]");
-  renderTable();
+// ====================== 表格与扫码 ======================
+let tableData = [];
+const tbody = document.getElementById('tableBody');
+const headerScanBtn = document.getElementById('headerScanBtn');
+const addRowBtn = document.getElementById('addRowBtn');
+const delRowBtn = document.getElementById('delRowBtn');
+const closeScannerBtn = document.getElementById('closeScannerBtn');
+const scannerContainer = document.getElementById('scanner-container');
+const scannerVideo = document.getElementById('scanner-video');
+const searchInput = document.getElementById('searchInput');
+
+let stream = null;
+let scanning = false;
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
-function saveData() {
-  localStorage.setItem("tableData", JSON.stringify(data));
-}
+
 function renderTable() {
-  const tbody = document.getElementById("tbody");
-  let html = "";
-  data.forEach((row, i) => {
-    html += `<tr>
-      <td contenteditable onblur="updateCell(${i},0,this.innerText)">${row[0]||""}</td>
-      <td contenteditable onblur="updateCell(${i},1,this.innerText)">${row[1]||""}</td>
-      <td contenteditable onblur="updateCell(${i},2,this.innerText)">${row[2]||""}</td>
-      <td contenteditable onblur="updateCell(${i},3,this.innerText)">${row[3]||""}</td>
-      <td contenteditable onblur="updateCell(${i},4,this.innerText)">${row[4]||""}</td>
-      <td contenteditable onblur="updateCell(${i},5,this.innerText)">${row[5]||""}</td>
-    </tr>`;
-  });
-  tbody.innerHTML = html;
-}
-function updateCell(i,c,v){data[i][c]=v;saveData()}
-function addRow(){data.push(["","","","","",""]);saveData();renderTable()}
-function deleteLastRow(){if(data.length===0)return;if(!confirm("确定删除最后一行？"))return;data.pop();saveData();renderTable()}
-
-document.getElementById("search").oninput = function(){
-  const kw = this.value.toLowerCase();
-  document.querySelectorAll("#tbody tr").forEach((tr,i)=>{
-    const t = (data[i][0]+" "+data[i][1]+" "+data[i][2]).toLowerCase();
-    tr.style.display = t.includes(kw)?"":"none";
-  })
+    let html = '';
+    tableData.forEach((row, r) => {
+        html += '<tr>';
+        for (let c = 0; c < 6; c++) {
+            const val = row[c] || '';
+            html += `<td contenteditable data-row="${r}" data-col="${c}">${escapeHtml(val)}</td>`;
+        }
+        html += '</tr>';
+    });
+    tbody.innerHTML = html;
 }
 
-// ====================== Excel ======================
-function importExcel(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    const wb = XLSX.read(ev.target.result, { type: 'binary' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const arr = XLSX.utils.sheet_to_json(ws, { header: 1 });
-    arr.shift();
-    data = arr.filter(r=>r.length>0).map(r=>[
-      r[0]||"",r[1]||"",r[2]||"",r[3]||"",r[4]||"",r[5]||""
+function attachCellEvents() {
+    tbody.querySelectorAll('td').forEach(cell => {
+        cell.addEventListener('input', function() {
+            const r = +this.dataset.row;
+            const c = +this.dataset.col;
+            if (tableData[r]) tableData[r][c] = this.innerText;
+            saveData();
+        });
+    });
+}
+
+function refresh() {
+    renderTable();
+    attachCellEvents();
+}
+
+// 扫码规则与你提供的代码完全一致
+function parseQr(s) {
+    if (!s) return null;
+    const loc = s.match(/仓位[：:]?\s*(\S+)/);
+    const id  = s.match(/编码[：:]?\s*(\S+)/);
+    const name = s.match(/名称[：:]?\s*(\S+)/);
+    return {
+        location: loc ? loc[1] : '',
+        code: id ? id[1] : '',
+        name: name ? name[1] : ''
+    };
+}
+
+function addEmptyRow() {
+    tableData.push(['', '', '', '', '', '']);
+    saveData();
+    refresh();
+}
+
+function deleteLastRow() {
+    if (tableData.length === 0) return;
+    if (!confirm("确定删除最后一行？")) return;
+    tableData.pop();
+    saveData();
+    refresh();
+}
+
+function addRow(data) {
+    tableData.push([
+        data.location,
+        data.code,
+        data.name,
+        '', '', ''
     ]);
     saveData();
-    renderTable();
-    alert("导入成功");
-  };
-  reader.readAsBinaryString(file);
+    refresh();
+}
+
+function handleScan(text) {
+    const d = parseQr(text);
+    if (!d) return;
+    addRow(d);
+}
+
+async function startScanner() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+        });
+        scannerVideo.srcObject = stream;
+        scannerContainer.style.display = 'block';
+        scanning = true;
+        scannerVideo.onloadedmetadata = scanLoop;
+    } catch (e) {
+        alert('摄像头权限失败');
+        scannerContainer.style.display = 'none';
+    }
+}
+
+function scanLoop() {
+    if (!scanning) return;
+    const w = scannerVideo.videoWidth;
+    const h = scannerVideo.videoHeight;
+    if (!w || !h) return requestAnimationFrame(scanLoop);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(scannerVideo, 0,0,w,h);
+    const code = jsQR(ctx.getImageData(0,0,w,h).data, w,h);
+    if (code && code.data) {
+        stopScanner();
+        handleScan(code.data.trim());
+        return;
+    }
+    requestAnimationFrame(scanLoop);
+}
+
+function stopScanner() {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    scannerContainer.style.display = 'none';
+    scanning = false;
+}
+
+// 搜索
+searchInput.addEventListener('input', () => {
+    const kw = searchInput.value.toLowerCase().trim();
+    tbody.querySelectorAll('tr').forEach((tr, i) => {
+        const t = tableData[i];
+        if (!t) return;
+        const txt = (t[0]+' '+t[1]+' '+t[2]).toLowerCase();
+        tr.style.display = !kw || txt.includes(kw) ? '' : 'none';
+    });
+});
+
+// Excel
+function importExcel(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const wb = XLSX.read(ev.target.result, { type: 'binary' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const arr = XLSX.utils.sheet_to_json(ws, { header: 1 });
+        arr.shift();
+        tableData = arr.filter(r=>r.length>0).map(r=>[
+            r[0]||"",r[1]||"",r[2]||"",r[3]||"",r[4]||"",r[5]||""
+        ]);
+        saveData();
+        refresh();
+        alert("导入成功");
+    };
+    reader.readAsBinaryString(file);
 }
 
 function exportExcel() {
-  const ws = XLSX.utils.aoa_to_sheet([["仓位","编码","名称","D","E","F"],...data]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "仓位数据");
-  XLSX.writeFile(wb, "仓位数据.xlsx");
+    const ws = XLSX.utils.aoa_to_sheet([["仓位","编码","名称","D","E","F"],...tableData]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "仓位数据");
+    XLSX.writeFile(wb, "仓位数据.xlsx");
 }
 
-// ====================== 扫码 ======================
-let video, canvas, ctx, scanning;
-function openScanner() {
-  document.getElementById("scanner").style.display = "flex";
-  video = document.getElementById("video");
-  canvas = document.createElement("canvas");
-  ctx = canvas.getContext("2d");
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(s=>{video.srcObject=s;scanning=true;scan()});
+function saveData() {
+    localStorage.setItem("tableData", JSON.stringify(tableData));
 }
-function closeScanner() {
-  document.getElementById("scanner").style.display = "none";
-  if (video.srcObject) video.srcObject.getTracks().forEach(t=>t.stop());
-  scanning = false;
-}
-function scan() {
-  if (!scanning) return;
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video,0,0);
-    const code = jsQR(ctx.getImageData(0,0,canvas.width,canvas.height).data, canvas.width, canvas.height);
-    if (code) {
-      const t = code.data.trim();
-      const loc = t.match(/仓位[:：]\s*(\S+)/)?.[1]||"";
-      const codeStr = t.match(/编码[:：]\s*(\S+)/)?.[1]||"";
-      const name = t.match(/名称[:：]\s*(\S+)/)?.[1]||"";
-      data.push([loc,codeStr,name,"","",""]);
-      saveData();
-      renderTable();
-      closeScanner();
-      return;
+
+function loadData() {
+    tableData = JSON.parse(localStorage.getItem("tableData") || "[]");
+    if (tableData.length === 0) {
+        tableData = [['A-1','12345','前杠','','','']];
     }
-  }
-  requestAnimationFrame(scan);
+    refresh();
 }
 
-loadData();
+headerScanBtn.addEventListener('click', startScanner);
+closeScannerBtn.addEventListener('click', stopScanner);
+addRowBtn.addEventListener('click', addEmptyRow);
+delRowBtn.addEventListener('click', deleteLastRow);
 </script>
 </body>
 </html>
