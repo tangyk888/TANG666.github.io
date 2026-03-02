@@ -1,1918 +1,551 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
+<html lang="zh-CN"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>仓位管理系统</title>
-    <!-- Tailwind CSS v3 -->
+    <title>仓库仓位查询系统 - 查询</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <!-- jsQR 库用于二维码扫描 -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <!-- 统一的 Tailwind 配置 -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#1e40af', // 专业仓储蓝
-                        secondary: '#f3f4f6',
-                        success: '#10b981',
-                        warning: '#f59e0b',
-                        danger: '#ef4444',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-in': 'slideIn 0.3s ease-out',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideIn: {
-                            '0%': { transform: 'translateY(-10px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        },
-                    },
+                        primary: '#1e40af',
+                        secondary: '#3b82f6',
+                        accent: '#60a5fa',
+                        neutral: '#f3f4f6',
+                    }
                 }
             }
         }
     </script>
     <style type="text/tailwindcss">
         @layer utilities {
-            .content-auto {
-                content-visibility: auto;
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             }
-            .glass-effect {
-                background: rgba(255, 255, 255, 0.25);
-                backdrop-filter: blur(4px);
-                -webkit-backdrop-filter: blur(4px);
-                border: 1px solid rgba(255, 255, 255, 0.18);
+            .card-shadow {
+                box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
             }
-            .table-shadow {
-                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none;
             }
-            .btn-scan {
-                transition: all 0.3s ease;
+            .btn-primary {
+                @apply bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-all duration-200;
             }
-            .btn-scan:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 10px 20px rgba(30, 64, 175, 0.3);
+            .btn-secondary {
+                @apply bg-white text-primary border border-primary px-4 py-2 rounded-lg hover:bg-primary/5 transition-all duration-200;
             }
-            .btn-scan:active {
-                transform: translateY(0);
-            }
-            .cell-highlight {
-                animation: highlight 1s ease-in-out;
-            }
-            @keyframes highlight {
-                0% { background-color: rgba(16, 185, 129, 0.2); }
-                50% { background-color: rgba(16, 185, 129, 0.5); }
-                100% { background-color: transparent; }
-            }
-            .separator-input {
-                width: 2rem;
-                text-align: center;
-            }
-            @keyframes scanMove {
-                0% { top: 0; }
-                50% { top: 100%; }
-                100% { top: 0; }
+            .btn-accent {
+                @apply bg-gradient-primary text-white px-6 py-3 rounded-lg hover:opacity-90 transition-all duration-200 text-lg font-medium;
             }
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- 登录界面 -->
-    <div id="loginScreen" class="fixed inset-0 bg-gray-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl p-8 w-full max-w-md shadow-lg">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-primary flex items-center justify-center">
-                    <i class="fa fa-cubes mr-3"></i>
-                    仓位管理系统
-                </h1>
-                <p class="text-gray-600 mt-2">请登录以访问系统</p>
-            </div>
-            
-            <div class="space-y-4">
-                <div>
-                    <label for="username" class="block text-gray-700 mb-1">用户名:</label>
-                    <input type="text" id="username" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入用户名">
-                </div>
-                
-                <div>
-                    <label for="password" class="block text-gray-700 mb-1">密码:</label>
-                    <input type="password" id="password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入密码">
-                </div>
-                
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center">
-                        <input type="checkbox" id="remember" class="mr-2">
-                        <label for="remember" class="text-gray-600 text-sm">记住我</label>
-                    </div>
-                    <button id="loginBtn" class="bg-primary hover:bg-primary/90 text-white py-2 px-6 rounded-lg shadow">
-                        登录
-                    </button>
-                </div>
-            </div>
-            
-            <div class="mt-6 text-center text-sm text-gray-600">
-                <p>默认管理员账号: admin / 123456</p>
-                <p>默认普通用户: user / 123456</p>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 主界面 -->
-    <div id="mainApp" class="container mx-auto px-4 py-8 hidden">
-        <!-- 页面容器 -->
-        <div id="pageContainer">
-        
-        <!-- 详情页面 -->
-        <div id="detailPage" class="hidden">
-            <!-- 顶部导航栏 -->
-            <header class="mb-6">
-                <div class="flex items-center">
-                    <button id="backToListBtn" class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg shadow flex items-center mr-4">
-                        <i class="fa fa-arrow-left mr-2"></i>
-                        返回查询结果
-                    </button>
-                    <h1 class="text-2xl font-bold text-primary">仓位详情</h1>
-                </div>
-            </header>
-            
-            <!-- 详情内容区域 -->
-            <div class="max-w-md mx-auto">
-                <!-- 仓位信息卡片 -->
-                <div class="bg-white rounded-xl p-6 shadow-sm mb-8">
-                    <!-- 仓位标题 -->
-                    <div class="bg-blue-100 rounded-lg p-4 mb-6 text-center">
-                        <h2 class="text-2xl font-bold text-primary" id="detailLocation">A-1</h2>
-                    </div>
-                    
-                    <!-- 详细信息表格 -->
-                    <div class="space-y-4">
-                        <!-- 编码信息 -->
-                        <div class="border-b border-gray-200 pb-3">
-                            <div class="text-sm text-gray-600 mb-1">编码</div>
-                            <div class="text-gray-800 font-medium" id="detailCode">12345 67890 12345 67890</div>
-                        </div>
-                        
-                        <!-- 仓位信息 -->
-                        <div class="border-b border-gray-200 pb-3">
-                            <div class="text-sm text-gray-600 mb-1">仓位</div>
-                            <div class="text-gray-800 font-medium" id="detailLocation2">A-1</div>
-                        </div>
-                        
-                        <!-- 名称信息 -->
-                        <div class="border-b border-gray-200 pb-3">
-                            <div class="text-sm text-gray-600 mb-1">名称</div>
-                            <div class="text-gray-800 font-medium" id="detailName">前杠</div>
-                        </div>
-                        
-                        <!-- 图片信息 -->
-                        <div>
-                            <div class="text-sm text-gray-600 mb-2">图片</div>
-                            <div class="flex justify-center">
-                                <div class="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                                    <img id="detailImage" src="" alt="产品图片" class="max-w-full max-h-full object-contain hidden">
-                                    <i class="fa fa-image text-gray-400 text-3xl" id="noImageIcon"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- 顶部标题和操作区 -->
-        <header class="mb-8">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="mb-4 md:mb-0 flex items-center">
-                    <!-- 返回按钮 -->
-                    <button id="backToQueryBtn" class="mr-1 text-gray-600 hover:text-primary p-2 rounded-full hover:bg-gray-100 sm:mr-2">
-                        <i class="fa fa-chevron-left"></i>
-                    </button>
-                    
-                    <div class="flex items-center">
-                        <h1 class="text-xl font-bold text-primary flex items-center">
-                            <i class="fa fa-cubes mr-2"></i>
-                            仓位信息管理
-                            <button id="logoutBtn" class="ml-4 text-gray-600 hover:text-primary py-1 px-3 rounded flex items-center text-sm sm:py-2 sm:px-4">
-                                <i class="fa fa-sign-out mr-1"></i>
-                                登出
-                            </button>
-                        </h1>
-
-                    </div>
-                </div>
-                
-                <div class="flex items-center space-x-4 w-full md:w-auto">
-                    <!-- 用户信息显示 -->
-                    <div class="flex items-center space-x-2">
-                        <div class="text-xs text-gray-600 sm:text-sm">
-                            <span id="currentUsername" class="font-semibold text-primary"></span>
-                        </div>
-                        <button id="userManagementBtn" class="bg-purple-600 hover:bg-purple-700 text-white py-1 px-2 rounded text-xs sm:py-2 sm:px-4 sm:text-sm shadow hidden">
-                            <i class="fa fa-users mr-1 sm:mr-2"></i>
-                            <span class="hidden sm:inline">用户管理</span>
-                        </button>
-                    </div>
-                    
-
-                </div>
-            </div>
-        </header>
-        
-        <!-- 主要内容区 - 表格 -->
-        <main id="dataEntryPage" class="bg-white rounded-xl p-6 table-shadow mb-8 hidden">
-            <!-- 操作按钮区域 -->
-            <div class="max-w-md mx-auto mb-8">
-                <!-- 分隔符设置 -->
-                <div class="mb-4">
-                    <label for="separator" class="block text-gray-700 mb-2 text-sm">分隔符:</label>
-                    <input type="text" id="separator" value=" " class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" maxlength="1">
-                </div>
-                
-                <!-- 扫描按钮 -->
-                <button id="scanBtn" class="btn-scan w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg shadow-lg flex items-center justify-center mb-4 text-lg">
-                    <i class="fa fa-qrcode mr-3"></i>
-                    扫描二维码
-                </button>
-                
-                <!-- 手动输入按钮 -->
-                <button id="manualInputBtn" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-4 rounded-lg shadow flex items-center justify-center text-lg">
-                    <i class="fa fa-keyboard-o mr-3"></i>
-                    手动输入
-                </button>
-            </div>
-            
-            <!-- 数据表格 -->
-            <div class="overflow-x-auto">
-                <table id="warehouseTable" class="w-full border-collapse">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700">仓位</th>
-                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700">编码</th>
-                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700">名称</th>
-                            <th class="border border-gray-300 px-4 py-3 text-center text-gray-700 w-16">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <!-- 表格数据将通过JavaScript动态添加 -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- 空状态提示 -->
-            <div id="emptyState" class="text-center py-12 hidden">
-                <i class="fa fa-box-open text-5xl text-gray-300 mb-4"></i>
-                <p class="text-gray-500 text-lg">暂无数据，请扫描二维码或手动输入</p>
-            </div>
-        </main>
-        
-        <!-- 详细信息表格 -->
-        <main id="detailsSection" class="bg-white rounded-xl p-6 table-shadow mb-8 hidden">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                <i class="fa fa-info-circle mr-2 text-primary"></i>
-                详细信息
-            </h2>
-            <div class="overflow-x-auto">
-                <table id="detailsTable" class="w-full border-collapse">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700 w-1/4">字段</th>
-                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700">内容</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detailsTableBody">
-                        <!-- 详细信息将通过JavaScript动态添加 -->
-                    </tbody>
-                </table>
-            </div>
-        </main>
-        
-        <!-- 底部状态栏 -->
-        <footer id="dataEntryFooter" class="bg-white rounded-lg p-4 shadow-sm flex justify-end items-center hidden">
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-30">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center">
-                <button id="exportBtn" class="text-primary hover:text-primary/80 flex items-center mr-6">
-                    <i class="fa fa-download mr-1"></i>
-                    导出数据
+                <button id="backButton" class="mr-4 text-gray-600 hover:text-primary">
+                    <i class="fa fa-arrow-left text-xl"></i>
                 </button>
-                <button id="clearBtn" class="text-danger hover:text-danger/80 flex items-center">
-                    <i class="fa fa-trash mr-1"></i>
-                    清空数据
+                <h1 class="text-xl font-bold text-gray-800">仓位查询</h1>
+            </div>
+            <div>
+                <button id="menuButton" class="text-gray-600 hover:text-primary p-2">
+                    <i class="fa fa-ellipsis-v text-xl"></i>
                 </button>
             </div>
-        </footer>
-        
-        <!-- 查询页面 -->
-        <div id="queryPage">
-            <!-- 查询表单区域 -->
-            <div class="bg-white rounded-xl p-6 shadow-sm mb-8 border-l-4 border-primary max-w-md mx-auto">
-                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                    <i class="fa fa-search mr-2 text-primary"></i>
-                    仓位查询
-                </h2>
-                
-                <div class="space-y-4">
-                    <div>
-                        <label for="queryCode" class="block text-gray-700 mb-1 text-sm">编码:</label>
-                        <input type="text" id="queryCode" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入">
-                    </div>
-                    
-                    <div>
-                        <label for="queryName" class="block text-gray-700 mb-1 text-sm">名称:</label>
-                        <input type="text" id="queryName" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入">
-                    </div>
-                    
-                    <div>
-                        <label for="queryLocation" class="block text-gray-700 mb-1 text-sm">仓位:</label>
-                        <input type="text" id="queryLocation" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入">
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <!-- Search Form -->
+        <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">查询条件</h2>
+            
+            <div class="space-y-4">
+                <!-- 编码查询 -->
+                <div>
+                    <label for="codeSearch" class="block text-sm font-medium text-gray-700 mb-1">编码</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <i class="fa fa-barcode"></i>
+                        </span>
+                        <input type="text" id="codeSearch" name="codeSearch" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg input-focus transition-all duration-200" placeholder="请输入编码">
                     </div>
                 </div>
-                
-                <div class="space-y-3 mt-6">
-                    <button id="queryBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded shadow flex items-center justify-center">
+
+                <!-- 名称查询 -->
+                <div>
+                    <label for="nameSearch" class="block text-sm font-medium text-gray-700 mb-1">名称</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <i class="fa fa-tag"></i>
+                        </span>
+                        <input type="text" id="nameSearch" name="nameSearch" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg input-focus transition-all duration-200" placeholder="请输入名称">
+                    </div>
+                </div>
+
+                <!-- 仓位查询 -->
+                <div>
+                    <label for="positionSearch" class="block text-sm font-medium text-gray-700 mb-1">仓位</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <i class="fa fa-map-marker"></i>
+                        </span>
+                        <input type="text" id="positionSearch" name="positionSearch" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg input-focus transition-all duration-200" placeholder="请输入仓位">
+                    </div>
+                </div>
+
+                <!-- Search Buttons -->
+                <div class="flex space-x-3 pt-2">
+                    <button id="searchButton" class="btn-primary flex-1 flex items-center justify-center">
                         <i class="fa fa-search mr-2"></i>
-                        查询
+                        <span style="font-size: 18px;">查询</span>
                     </button>
-                    
-                    <button id="dataEntryBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded shadow flex items-center justify-center">
-                        <i class="fa fa-plus mr-2"></i>
-                        数据录入
+                    <button id="scanButton" class="btn-secondary flex-1 flex items-center justify-center">
+                        <i class="fa fa-qrcode mr-2"></i>
+                        <span>扫码查询</span>
+                    </button>
+                    <button id="clearButton" class="btn-secondary flex-1 flex items-center justify-center">
+                        <i class="fa fa-refresh mr-2"></i>
+                        <span>清空</span>
                     </button>
                 </div>
             </div>
-            
-            <!-- 查询结果区域 -->
-            <div id="queryResults" class="bg-white rounded-xl p-6 shadow-sm mb-8 hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-gray-800 flex items-center">
-                        <i class="fa fa-list-alt mr-2 text-primary"></i>
-                        查询结果
-                    </h2>
-                    <div class="flex items-center space-x-3">
-                        <button id="resetQueryBtn" class="text-gray-600 hover:text-primary flex items-center text-sm">
-                            <i class="fa fa-refresh mr-1"></i>
-                            重置
-                        </button>
-                        <button id="exportQueryBtn" class="text-primary hover:text-primary/80 flex items-center text-sm">
-                            <i class="fa fa-download mr-1"></i>
-                            导出
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="overflow-x-auto border border-gray-200 rounded">
-                    <table class="w-full border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th class="border-b border-gray-200 px-4 py-2 text-left text-gray-700 text-sm font-medium">序号</th>
-                                <th class="border-b border-gray-200 px-4 py-2 text-left text-gray-700 text-sm font-medium">仓位</th>
-                                <th class="border-b border-gray-200 px-4 py-2 text-left text-gray-700 text-sm font-medium">编码</th>
-                                <th class="border-b border-gray-200 px-4 py-2 text-left text-gray-700 text-sm font-medium">名称</th>
-                                <th class="border-b border-gray-200 px-4 py-2 text-left text-gray-700 text-sm font-medium">备注</th>
-                                <th class="border-b border-gray-200 px-4 py-2 text-left text-gray-700 text-sm font-medium">创建时间</th>
-                                <th class="border-b border-gray-200 px-4 py-2 text-center text-gray-700 text-sm font-medium w-20">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="queryResultsTableBody">
-                            <!-- 查询结果将通过JavaScript动态添加 -->
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- 查询结果统计 -->
-                <div class="mt-4 flex justify-between items-center text-gray-600 text-sm">
-                    <div>
-                        共找到 <span id="queryCount" class="font-semibold text-primary">0</span> 条记录
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 查询为空状态 -->
-            <div id="queryEmptyState" class="bg-white rounded-xl p-6 shadow-sm mb-8 hidden">
-                <div class="text-center py-12">
-                    <i class="fa fa-search text-5xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500 text-lg">暂无查询结果</p>
-                    <p class="text-gray-400 mt-2">请调整查询条件后重试</p>
-                </div>
-            </div>
-            
-
         </div>
-    </div>
-    
-    <!-- 手动输入模态框 -->
-    <div id="manualInputModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md animate-fade-in">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">手动输入信息</h2>
-                <button id="closeModal" class="text-gray-500 hover:text-gray-700">
-                    <i class="fa fa-times"></i>
+
+        <!-- Quick Input Section -->
+        <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">快速录入</h2>
+                <button id="quickInputButton" class="text-primary hover:text-primary/80 text-sm flex items-center">
+                    <span>更多录入</span>
+                    <i class="fa fa-chevron-right ml-1 text-xs"></i>
                 </button>
             </div>
             
             <div class="space-y-4">
-                <div>
-                    <label for="locationInput" class="block text-gray-700 mb-1">仓位:</label>
-                    <input type="text" id="locationInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="例如: A-1">
-                </div>
-                
-                <div>
-                    <label for="codeInput" class="block text-gray-700 mb-1">编码:</label>
-                    <input type="text" id="codeInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="例如: 12345">
-                </div>
-                
-                <div>
-                    <label for="nameInput" class="block text-gray-700 mb-1">名称:</label>
-                    <input type="text" id="nameInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="例如: 前杠">
-                </div>
-                
-
-                
-                <div class="flex justify-end space-x-3 pt-2">
-                    <button id="cancelInput" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100">
-                        取消
-                    </button>
-                    <button id="confirmInput" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
-                        确认
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 摄像头扫码模态框 -->
-    <div id="cameraModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-4 w-full max-w-3xl animate-fade-in relative">
-            <button id="closeCameraModal" class="absolute top-4 right-4 text-white bg-gray-800 bg-opacity-50 hover:bg-opacity-70 rounded-full w-8 h-8 flex items-center justify-center">
-                <i class="fa fa-times"></i>
-            </button>
-            
-            <div class="text-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">扫描二维码</h2>
-                <p class="text-gray-600 text-sm mt-1">请将二维码对准扫描区域</p>
-            </div>
-            
-            <div class="relative w-full" style="height: 400px;">
-                <video id="qrVideo" class="w-full h-full object-cover rounded-lg"></video>
-                <canvas id="qrCanvas" class="absolute top-0 left-0 w-full h-full hidden"></canvas>
-                
-                <!-- 扫描线动画 -->
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div class="w-3/4 h-3/4 border-2 border-green-500 rounded-lg relative">
-                        <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-green-500 -mt-1 -ml-1"></div>
-                        <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-green-500 -mt-1 -mr-1"></div>
-                        <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-green-500 -mb-1 -ml-1"></div>
-                        <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-green-500 -mb-1 -mr-1"></div>
-                        
-                        <div id="scanLine" class="absolute left-0 right-0 h-1 bg-green-500 opacity-70" style="top: 50%; animation: scanMove 2s linear infinite;"></div>
+                <div class="flex space-x-3">
+                    <div class="flex-1">
+                        <label for="quickPosition" class="block text-sm font-medium text-gray-700 mb-1">仓位</label>
+                        <input type="text" id="quickPosition" name="quickPosition" class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus transition-all duration-200" placeholder="仓位">
+                    </div>
+                    <div class="flex-1">
+                        <label for="quickCode" class="block text-sm font-medium text-gray-700 mb-1">编码</label>
+                        <input type="text" id="quickCode" name="quickCode" class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus transition-all duration-200" placeholder="编码">
                     </div>
                 </div>
-            </div>
-            
-            <div class="mt-4 flex justify-center">
-                <button id="switchCameraBtn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 flex items-center">
-                    <i class="fa fa-refresh mr-2"></i>
-                    切换摄像头
+                
+                <div>
+                    <label for="quickName" class="block text-sm font-medium text-gray-700 mb-1">名称</label>
+                    <input type="text" id="quickName" name="quickName" class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus transition-all duration-200" placeholder="请输入名称">
+                </div>
+                
+                <button id="quickSaveButton" class="btn-accent w-full flex items-center justify-center">
+                    <i class="fa fa-save mr-2"></i>
+                    <span>快速保存</span>
                 </button>
             </div>
         </div>
-    </div>
-    
+    </main>
 
-    
-    <!-- 用户管理模态框 -->
-    <div id="userManagementModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 w-full max-w-2xl animate-fade-in">
+    <!-- Menu Modal -->
+    <div id="menuModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-end justify-center">
+        <div class="bg-white rounded-t-xl w-full max-w-md p-6 transform transition-transform duration-300 translate-y-full" id="menuContent">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-gray-800 flex items-center">
-                    <i class="fa fa-users mr-2 text-purple-600"></i>
-                    用户管理
-                </h2>
-                <button id="closeUserManagementModal" class="text-gray-500 hover:text-gray-700">
-                    <i class="fa fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="mb-4">
-                <button id="addUserBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow flex items-center">
-                    <i class="fa fa-plus mr-2"></i>
-                    添加用户
-                </button>
-            </div>
-            
-            <div class="overflow-x-auto">
-                <table id="usersTable" class="w-full border-collapse">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700">用户名</th>
-                            <th class="border border-gray-300 px-4 py-3 text-left text-gray-700">角色</th>
-                            <th class="border border-gray-300 px-4 py-3 text-center text-gray-700 w-32">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <!-- 用户数据将通过JavaScript动态添加 -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 添加/编辑用户模态框 -->
-    <div id="editUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md animate-fade-in">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="editUserTitle" class="text-xl font-bold text-gray-800">添加用户</h2>
-                <button id="closeEditUserModal" class="text-gray-500 hover:text-gray-700">
-                    <i class="fa fa-times"></i>
+                <h3 class="text-lg font-semibold text-gray-800">菜单</h3>
+                <button id="closeMenuButton" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times text-xl"></i>
                 </button>
             </div>
             
             <div class="space-y-4">
-                <input type="hidden" id="editUserId">
+                <button id="userManagementButton" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-primary mr-3">
+                            <i class="fa fa-users"></i>
+                        </div>
+                        <span class="text-gray-800">用户管理</span>
+                    </div>
+                    <i class="fa fa-chevron-right text-gray-400"></i>
+                </button>
                 
-                <div>
-                    <label for="editUsername" class="block text-gray-700 mb-1">用户名:</label>
-                    <input type="text" id="editUsername" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入用户名">
+                <button id="settingsButton" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3">
+                            <i class="fa fa-cog"></i>
+                        </div>
+                        <span class="text-gray-800">系统设置</span>
+                    </div>
+                    <i class="fa fa-chevron-right text-gray-400"></i>
+                </button>
+                
+                <button id="logoutButton" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3">
+                            <i class="fa fa-sign-out"></i>
+                        </div>
+                        <span class="text-gray-800">登出</span>
+                    </div>
+                    <i class="fa fa-chevron-right text-gray-400"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Scanner Modal -->
+    <div id="scannerModal" class="fixed inset-0 bg-black z-50 hidden flex flex-col">
+        <div class="flex justify-between items-center p-4 bg-black">
+            <button id="closeScannerButton" class="text-white p-2">
+                <i class="fa fa-times text-xl"></i>
+            </button>
+            <h3 class="text-white text-lg font-medium">扫描二维码</h3>
+            <button id="switchCameraButton" class="text-white p-2">
+                <i class="fa fa-refresh text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="flex-1 relative">
+            <video id="video" class="w-full h-full object-cover"></video>
+            <canvas id="canvas" class="hidden absolute inset-0 w-full h-full"></canvas>
+            
+            <!-- Scanner Overlay -->
+            <div class="absolute inset-0 flex items-center justify-center">
+                <div class="relative w-64 h-64">
+                    <!-- Corner Markers -->
+                    <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white"></div>
+                    <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white"></div>
+                    <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white"></div>
+                    <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white"></div>
+                    
+                    <!-- Scan Line Animation -->
+                    <div class="absolute left-0 right-0 h-1 bg-white bg-opacity-70 top-0" id="scanLine"></div>
                 </div>
-                
-                <div>
-                    <label for="editPassword" class="block text-gray-700 mb-1">密码:</label>
-                    <input type="password" id="editPassword" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入密码">
-                </div>
-                
-                <div>
-                    <label for="editRole" class="block text-gray-700 mb-1">角色:</label>
-                    <select id="editRole" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
-                        <option value="user">普通用户</option>
-                        <option value="admin">管理员</option>
-                    </select>
-                </div>
-                
-                <div class="flex justify-end space-x-3 pt-2">
-                    <button id="cancelEditUser" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100">
-                        取消
-                    </button>
-                    <button id="saveUser" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
-                        保存
-                    </button>
+            </div>
+            
+            <!-- Result Display -->
+            <div id="scanResult" class="absolute bottom-10 left-0 right-0 mx-auto w-4/5 bg-black bg-opacity-70 text-white p-4 rounded-lg hidden">
+                <p class="text-center text-lg" id="scanResultText"></p>
+                <div class="flex justify-center mt-3 space-x-4">
+                    <button id="confirmScanButton" class="bg-white text-black px-4 py-1 rounded">确认</button>
+                    <button id="cancelScanButton" class="bg-gray-700 text-white px-4 py-1 rounded">取消</button>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- 扫描结果提示 -->
-    <div id="scanResultToast" class="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50 max-w-xs">
-        <div class="flex items-start">
-            <div id="toastIcon" class="mr-3 mt-0.5 text-success">
-                <i class="fa fa-check-circle text-xl"></i>
-            </div>
-            <div class="flex-1">
-                <h4 id="toastTitle" class="font-medium text-gray-900">扫描成功</h4>
-                <p id="toastMessage" class="text-sm text-gray-600 mt-1">数据已添加到表格</p>
-            </div>
-            <button id="closeToast" class="text-gray-400 hover:text-gray-600">
-                <i class="fa fa-times"></i>
-            </button>
-        </div>
+
+    <!-- Toast Message -->
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg z-50 hidden opacity-0 transition-opacity duration-300">
+        <span id="toastMessage"></span>
     </div>
 
     <script>
-        // 用户管理相关变量
-        let users = [];
-        let currentUser = null;
-        const USER_ROLES = {
-            ADMIN: 'admin',
-            USER: 'user'
-        };
-        
-        // 全局变量
-        let warehouseData = [];
-        let nextRowId = 1;
-        let lastSubmitTime = 0;
-        let lastSubmitData = '';
-        const MIN_SUBMIT_INTERVAL = 500; // 最小提交间隔，单位毫秒
-        
-        // 摄像头相关变量
-        let video = null;
-        let canvas = null;
-        let stream = null;
-        let scanInterval = null;
-        let currentCameraId = null;
-        let cameras = [];
-        
-        // DOM 元素
-        const tableBody = document.getElementById('tableBody');
-        const emptyState = document.getElementById('emptyState');
-        const totalItems = document.getElementById('totalItems');
-        const separatorInput = document.getElementById('separator');
-        const scanBtn = document.getElementById('scanBtn');
-        const manualInputBtn = document.getElementById('manualInputBtn');
-        const manualInputModal = document.getElementById('manualInputModal');
-        const closeModal = document.getElementById('closeModal');
-        const cancelInput = document.getElementById('cancelInput');
-        const confirmInput = document.getElementById('confirmInput');
-        const locationInput = document.getElementById('locationInput');
-        const codeInput = document.getElementById('codeInput');
-        const nameInput = document.getElementById('nameInput');
-        const scanResultToast = document.getElementById('scanResultToast');
-        const toastIcon = document.getElementById('toastIcon');
-        const toastTitle = document.getElementById('toastTitle');
-        const toastMessage = document.getElementById('toastMessage');
-        const closeToast = document.getElementById('closeToast');
-        const exportBtn = document.getElementById('exportBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const detailsSection = document.getElementById('detailsSection');
-        const detailsTableBody = document.getElementById('detailsTableBody');
-        
-        // 摄像头相关DOM元素
-        const cameraModal = document.getElementById('cameraModal');
-        const closeCameraModal = document.getElementById('closeCameraModal');
-        const switchCameraBtn = document.getElementById('switchCameraBtn');
-        
-        // 初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            // 初始化用户数据
-            initializeUserData();
-            // 从本地存储加载数据
-            loadDataFromLocalStorage();
-            // 更新表格显示
-            updateTableDisplay();
-            // 绑定事件
-            bindEvents();
-        });
-        
-        // 绑定事件
-        function bindEvents() {
-            // 登录相关事件
-            document.getElementById('loginBtn').addEventListener('click', handleLogin);
-            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-            document.getElementById('userManagementBtn').addEventListener('click', showUserManagement);
-            
-            // 用户管理相关事件
-            document.getElementById('closeUserManagementModal').addEventListener('click', () => {
-                document.getElementById('userManagementModal').classList.add('hidden');
-            });
-            document.getElementById('addUserBtn').addEventListener('click', () => openEditUserModal());
-            document.getElementById('closeEditUserModal').addEventListener('click', () => {
-                document.getElementById('editUserModal').classList.add('hidden');
-            });
-            document.getElementById('cancelEditUser').addEventListener('click', () => {
-                document.getElementById('editUserModal').classList.add('hidden');
-            });
-            document.getElementById('saveUser').addEventListener('click', saveUser);
-            
-            // 扫描按钮点击事件
-            scanBtn.addEventListener('click', openCameraModal);
-            
-            // 手动输入按钮点击事件
-            manualInputBtn.addEventListener('click', () => {
-                manualInputModal.classList.remove('hidden');
-            });
-            
-            // 关闭模态框
-            closeModal.addEventListener('click', () => {
-                manualInputModal.classList.add('hidden');
-                clearManualInputs();
-            });
-            
-            cancelInput.addEventListener('click', () => {
-                manualInputModal.classList.add('hidden');
-                clearManualInputs();
-            });
-            
-            // 确认手动输入
-            confirmInput.addEventListener('click', () => {
-                let location = locationInput.value.trim();
-                let code = codeInput.value.trim();
-                let name = nameInput.value.trim();
-                
-                // 直接处理手动输入的数据，允许部分字段为空
-                processScanData(location, code, name, true);
-                
-                manualInputModal.classList.add('hidden');
-                clearManualInputs();
-            });
-            
-            // 关闭提示框
-            closeToast.addEventListener('click', hideToast);
-            
-            // 导出数据
-            exportBtn.addEventListener('click', exportData);
-            
-            // 清空数据
-            clearBtn.addEventListener('click', clearData);
-            
-            // 数据录入按钮事件
-            document.getElementById('dataEntryBtn').addEventListener('click', showDataEntryPage);
-            document.getElementById('backToQueryBtn').addEventListener('click', showQueryPage);
-            
-            // 查询相关事件
-            document.getElementById('queryBtn').addEventListener('click', performQuery);
-            document.getElementById('resetQueryBtn').addEventListener('click', resetQuery);
-            document.getElementById('exportQueryBtn').addEventListener('click', exportQueryResults);
+        // 检查用户是否已登录
+        if (!sessionStorage.getItem('currentUser')) {
+            window.location.href = 'index.html';
+        }
 
+        // 获取当前用户信息
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+
+        // 显示Toast消息
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
             
-            // 分隔符输入变化
-            separatorInput.addEventListener('input', (e) => {
-                if (e.target.value.length > 1) {
-                    e.target.value = e.target.value.charAt(0);
-                }
-            });
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
             
-            // 关闭摄像头模态框
-            closeCameraModal.addEventListener('click', stopCamera);
+            // 触发动画
+            setTimeout(() => {
+                toast.classList.add('opacity-100');
+            }, 10);
             
-            // 切换摄像头
-            switchCameraBtn.addEventListener('click', switchCamera);
-        }
-        
-        // 打开摄像头模态框
-        function openCameraModal() {
-            cameraModal.classList.remove('hidden');
-            video = document.getElementById('qrVideo');
-            canvas = document.getElementById('qrCanvas');
-            
-            // 请求摄像头权限并启动扫描
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-                .then(openCameraModal_success)
-                .catch(openCameraModal_error);
-            
-            function openCameraModal_success(mediaStream) {
-                stream = mediaStream;
-                video.srcObject = stream;
-                video.setAttribute('playsinline', true); // iOS Safari 支持
-                video.play();
-                
-                // 更新摄像头列表
-                updateCameraList();
-                
-                // 开始扫描
+            // 定时隐藏
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
                 setTimeout(() => {
-                    scanInterval = setInterval(decodeQRCode, 200);
-                }, 1000);
-            }
-            
-            function openCameraModal_error(err) {
-                console.error("获取摄像头权限失败:", err);
-                cameraModal.classList.add('hidden');
-                
-                // 如果无法访问摄像头，使用模拟扫描作为备用方案
-                if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
-                    showToast('摄像头不可用', '将使用模拟扫描功能', 'warning');
-                    startScanSimulation();
-                } else {
-                    showToast('错误', '无法访问摄像头: ' + err.message, 'error');
-                }
-            }
+                    toast.classList.add('hidden');
+                }, 300);
+            }, duration);
         }
-        
-        // 启动摄像头扫描
-        function startCamera(cameraId = null) {
-            if (stream) {
-                stopCamera();
+
+        // 返回按钮事件
+        document.getElementById('backButton').addEventListener('click', function() {
+            if (confirm('确定要退出系统吗？')) {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            }
+        });
+
+        // 菜单按钮事件
+        document.getElementById('menuButton').addEventListener('click', function() {
+            const menuModal = document.getElementById('menuModal');
+            const menuContent = document.getElementById('menuContent');
+            
+            menuModal.classList.remove('hidden');
+            setTimeout(() => {
+                menuContent.classList.remove('translate-y-full');
+            }, 10);
+        });
+
+        // 关闭菜单按钮事件
+        document.getElementById('closeMenuButton').addEventListener('click', function() {
+            const menuModal = document.getElementById('menuModal');
+            const menuContent = document.getElementById('menuContent');
+            
+            menuContent.classList.add('translate-y-full');
+            setTimeout(() => {
+                menuModal.classList.add('hidden');
+            }, 300);
+        });
+
+        // 点击菜单外部关闭菜单
+        document.getElementById('menuModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                document.getElementById('closeMenuButton').click();
+            }
+        });
+
+        // 用户管理按钮事件
+        document.getElementById('userManagementButton').addEventListener('click', function() {
+            showToast('用户管理功能开发中...');
+            document.getElementById('closeMenuButton').click();
+        });
+
+        // 系统设置按钮事件
+        document.getElementById('settingsButton').addEventListener('click', function() {
+            showToast('系统设置功能开发中...');
+            document.getElementById('closeMenuButton').click();
+        });
+
+        // 登出按钮事件
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            if (confirm('确定要登出系统吗？')) {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            }
+        });
+
+        // 查询按钮事件
+        document.getElementById('searchButton').addEventListener('click', function() {
+            const codeSearch = document.getElementById('codeSearch').value.trim();
+            const nameSearch = document.getElementById('nameSearch').value.trim();
+            const positionSearch = document.getElementById('positionSearch').value.trim();
+            
+            // 构建查询参数
+            const queryParams = new URLSearchParams();
+            
+            if (codeSearch) queryParams.append('code', codeSearch);
+            if (nameSearch) queryParams.append('name', nameSearch);
+            if (positionSearch) queryParams.append('position', positionSearch);
+            
+            // 跳转到结果页面
+            window.location.href = `results.html?${queryParams.toString()}`;
+        });
+
+        // 清空按钮事件
+        document.getElementById('clearButton').addEventListener('click', function() {
+            document.getElementById('codeSearch').value = '';
+            document.getElementById('nameSearch').value = '';
+            document.getElementById('positionSearch').value = '';
+        });
+
+        // 快速录入按钮事件
+        document.getElementById('quickInputButton').addEventListener('click', function() {
+            window.location.href = 'input.html';
+        });
+
+        // 快速保存按钮事件
+        document.getElementById('quickSaveButton').addEventListener('click', function() {
+            const position = document.getElementById('quickPosition').value.trim();
+            const code = document.getElementById('quickCode').value.trim();
+            const name = document.getElementById('quickName').value.trim();
+            
+            if (!position || !code || !name) {
+                showToast('请填写完整信息');
+                return;
             }
             
+            // 获取现有仓位数据
+            let positions = JSON.parse(localStorage.getItem('warehousePositions')) || [];
+            
+            // 检查是否已存在相同仓位或编码
+            const existingPosition = positions.find(p => p.position === position || p.code === code);
+            if (existingPosition) {
+                showToast('仓位或编码已存在');
+                return;
+            }
+            
+            // 添加新仓位
+            const newPosition = {
+                id: Date.now().toString(),
+                position,
+                code,
+                name,
+                image: '',
+                details: '',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            
+            positions.push(newPosition);
+            localStorage.setItem('warehousePositions', JSON.stringify(positions));
+            
+            // 清空输入框
+            document.getElementById('quickPosition').value = '';
+            document.getElementById('quickCode').value = '';
+            document.getElementById('quickName').value = '';
+            
+            showToast('保存成功');
+        });
+
+        // 扫码按钮事件
+        document.getElementById('scanButton').addEventListener('click', function() {
+            const scannerModal = document.getElementById('scannerModal');
+            scannerModal.classList.remove('hidden');
+            startScanner();
+        });
+
+        // 关闭扫码按钮事件
+        document.getElementById('closeScannerButton').addEventListener('click', function() {
+            stopScanner();
+            const scannerModal = document.getElementById('scannerModal');
+            scannerModal.classList.add('hidden');
+        });
+
+        // 确认扫码结果按钮事件
+        document.getElementById('confirmScanButton').addEventListener('click', function() {
+            const scanResultText = document.getElementById('scanResultText').textContent;
+            
+            // 解析二维码数据（格式：仓位,编码,名称,详情）
+            const parts = scanResultText.split(',');
+            
+            if (parts.length >= 3) {
+                // 填充查询表单
+                document.getElementById('positionSearch').value = parts[0] || '';
+                document.getElementById('codeSearch').value = parts[1] || '';
+                document.getElementById('nameSearch').value = parts[2] || '';
+                
+                // 执行查询
+                document.getElementById('searchButton').click();
+            }
+            
+            // 关闭扫码界面
+            document.getElementById('closeScannerButton').click();
+        });
+
+        // 取消扫码结果按钮事件
+        document.getElementById('cancelScanButton').addEventListener('click', function() {
+            document.getElementById('scanResult').classList.add('hidden');
+            continueScanning();
+        });
+
+        // 切换摄像头按钮事件
+        document.getElementById('switchCameraButton').addEventListener('click', function() {
+            toggleCamera();
+        });
+
+        // 扫描线动画
+        function animateScanLine() {
+            const scanLine = document.getElementById('scanLine');
+            scanLine.style.transition = 'top 2s linear';
+            scanLine.style.top = '100%';
+            
+            setTimeout(() => {
+                scanLine.style.transition = 'none';
+                scanLine.style.top = '0';
+                setTimeout(animateScanLine, 100);
+            }, 2000);
+        }
+
+        // 启动扫描线动画
+        animateScanLine();
+
+        // 扫码相关变量
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let canvasContext = canvas.getContext('2d');
+        let stream = null;
+        let scanning = false;
+        let currentCamera = 'environment'; // 'environment' 或 'user'
+
+        // 启动扫码器
+        function startScanner() {
             const constraints = {
-                video: cameraId ? { deviceId: { exact: cameraId } } : { facingMode: 'environment' }
+                video: { facingMode: currentCamera }
             };
             
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(function(mediaStream) {
                     stream = mediaStream;
                     video.srcObject = stream;
+                    video.setAttribute('playsinline', true);
                     video.play();
-                    
-                    if (cameraId) {
-                        currentCameraId = cameraId;
-                    }
-                    
-                    // 开始扫描
-                    if (!scanInterval) {
-                        scanInterval = setInterval(decodeQRCode, 200);
-                    }
+                    scanning = true;
+                    requestAnimationFrame(tick);
                 })
                 .catch(function(err) {
-                    console.error("启动摄像头失败:", err);
-                    showToast('错误', '无法启动摄像头: ' + err.message, 'error');
+                    console.error('获取摄像头失败: ', err);
+                    showToast('无法访问摄像头，请检查权限设置');
+                    document.getElementById('closeScannerButton').click();
                 });
         }
-        
-        // 停止摄像头和扫描
-        function stopCamera() {
-            cameraModal.classList.add('hidden');
-            
-            if (scanInterval) {
-                clearInterval(scanInterval);
-                scanInterval = null;
-            }
-            
+
+        // 停止扫码器
+        function stopScanner() {
+            scanning = false;
             if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                });
                 stream = null;
             }
-            
-            if (video) {
-                video.srcObject = null;
-            }
+            video.srcObject = null;
         }
-        
+
         // 切换摄像头
-        function switchCamera() {
-            if (cameras.length <= 1) {
-                showToast('提示', '没有检测到多个摄像头', 'info');
-                return;
-            }
-            
-            // 找到当前摄像头的索引
-            const currentIndex = cameras.findIndex(cam => cam.deviceId === currentCameraId);
-            // 切换到下一个摄像头
-            const nextIndex = (currentIndex + 1) % cameras.length;
-            const nextCameraId = cameras[nextIndex].deviceId;
-            
-            startCamera(nextCameraId);
+        function toggleCamera() {
+            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            stopScanner();
+            startScanner();
         }
-        
-        // 更新可用摄像头列表
-        function updateCameraList() {
-            navigator.mediaDevices.enumerateDevices()
-                .then(function(devices) {
-                    cameras = devices.filter(device => device.kind === 'videoinput');
-                    
-                    // 如果有多个摄像头，启用切换按钮
-                    switchCameraBtn.disabled = cameras.length <= 1;
-                })
-                .catch(function(err) {
-                    console.error("获取摄像头列表失败:", err);
-                });
+
+        // 继续扫描
+        function continueScanning() {
+            scanning = true;
+            requestAnimationFrame(tick);
         }
-        
-        // 解码二维码
-        function decodeQRCode() {
-            if (!video.readyState) return;
+
+        // 扫描每一帧
+        function tick() {
+            if (!scanning) return;
             
-            const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                inversionAttempts: "dontInvert",
-            });
-            
-            if (code) {
-                // 停止扫描
-                clearInterval(scanInterval);
-                scanInterval = null;
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
-                // 处理扫描结果
-                processScanData(code.data);
-                
-                // 延迟关闭摄像头
-                setTimeout(stopCamera, 1000);
-            }
-        }
-        
-        // 模拟扫描二维码（备用方案）
-        function startScanSimulation() {
-            // 模拟二维码扫描延迟
-            scanBtn.disabled = true;
-            scanBtn.classList.add('opacity-70');
-            scanBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>扫描中...';
-            
-            // 模拟扫描过程
-            setTimeout(() => {
-                // 模拟二维码内容
-                const mockQrCodeData = generateMockQrCodeData();
-                
-                // 处理扫描数据
-                processScanData(mockQrCodeData);
-                
-                // 恢复按钮状态
-                scanBtn.disabled = false;
-                scanBtn.classList.remove('opacity-70');
-                scanBtn.innerHTML = '<i class="fa fa-qrcode mr-2"></i>扫描二维码';
-            }, 1500);
-        }
-        
-        // 生成模拟二维码数据（仅用于演示）
-        function generateMockQrCodeData() {
-            const locations = ['A-1', 'A-2', 'B-1', 'B-2', 'C-1', 'C-2', 'D-1', 'D-2'];
-            const codes = ['12345', '67890', '11223', '33445', '55667', '77889', '99001', '12345'];
-            const names = ['前杠', '后杠', '左车门', '右车门', '发动机', '变速箱', '方向盘', '座椅'];
-            
-            const randomLocation = locations[Math.floor(Math.random() * locations.length)];
-            const randomCode = codes[Math.floor(Math.random() * codes.length)];
-            const randomName = names[Math.floor(Math.random() * names.length)];
-            
-            const separator = separatorInput.value || ' ';
-            return `${randomLocation}${separator}${randomCode}${separator}${randomName}`;
-        }
-        
-        // 处理扫描数据
-        function processScanData(data, code = null, name = null, isManual = false) {
-            // 防重复提交检查
-            const now = Date.now();
-            if (now - lastSubmitTime < MIN_SUBMIT_INTERVAL && data === lastSubmitData && !isManual) {
-                showToast('提示', '请勿重复提交相同数据', 'info');
-                return;
-            }
-            
-            // 更新最后提交时间和数据
-            lastSubmitTime = now;
-            lastSubmitData = data;
-            
-            try {
-                let location, codeData, nameData;
-                
-                if (isManual) {
-                    // 手动输入模式，直接使用传入的参数
-                    location = data;
-                    codeData = code;
-                    nameData = name;
-                } else {
-                    // 扫码模式，解析字符串
-                    const separator = separatorInput.value || ' ';
-                    const parts = data.split(separator).filter(part => part.trim() !== '');
-                    
-                    if (parts.length < 3) {
-                        showToast('扫描失败', '二维码格式不正确，需要包含仓位、编码和名称', 'error');
-                        return;
-                    }
-                    
-                    // 确保正确解析数据
-                    location = parts[0].trim();
-                    codeData = parts[1].trim();
-                    // 第三个及以后的部分作为名称
-                    nameData = parts.slice(2).join(' ').trim();
-                }
-                
-                // 检查是否已存在相同仓位
-                const existingIndex = warehouseData.findIndex(item => item.location === location);
-                
-                if (existingIndex >= 0) {
-                    // 更新现有记录
-                    warehouseData[existingIndex] = {
-                        ...warehouseData[existingIndex],
-                        location,
-                        code: codeData,
-                        name: nameData,
-                        updatedAt: new Date().toISOString()
-                    };
-                    showToast('更新成功', `仓位 ${location} 的信息已更新`, 'success');
-                } else {
-                    // 添加新记录
-                    warehouseData.push({
-                        id: nextRowId++,
-                        location,
-                        code: codeData,
-                        name: nameData,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    });
-                    showToast(isManual ? '添加成功' : '扫描成功', '数据已添加到表格', 'success');
-                }
-                
-                // 更新表格显示
-                updateTableDisplay();
-                // 保存到本地存储
-                saveDataToLocalStorage();
-                
-                // 高亮显示新添加或更新的行
-                setTimeout(() => {
-                    const rowElement = document.querySelector(`[data-row-id="${existingIndex >= 0 ? warehouseData[existingIndex].id : warehouseData[warehouseData.length - 1].id}"]`);
-                    if (rowElement) {
-                        const cells = rowElement.querySelectorAll('td:not(:last-child)');
-                        cells.forEach(cell => {
-                            cell.classList.add('cell-highlight');
-                            setTimeout(() => cell.classList.remove('cell-highlight'), 1000);
-                        });
-                    }
-                }, 100);
-                
-            } catch (error) {
-                console.error('处理扫描数据时出错:', error);
-                showToast('处理失败', '无法处理扫描数据，请检查二维码格式', 'error');
-            }
-        }
-        
-        // 更新表格显示
-        function updateTableDisplay() {
-            // 清空表格
-            tableBody.innerHTML = '';
-            
-            if (warehouseData.length === 0) {
-                // 显示空状态
-                emptyState.classList.remove('hidden');
-                return;
-            }
-            
-            // 按仓位排序
-            warehouseData.sort((a, b) => {
-                // 自然排序算法，处理如"A-10"排在"A-2"之后的情况
-                return a.location.localeCompare(b.location, undefined, { numeric: true, sensitivity: 'base' });
-            });
-            
-            // 隐藏空状态
-            emptyState.classList.add('hidden');
-            
-            // 添加数据行
-            warehouseData.forEach(item => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 transition-colors';
-                row.setAttribute('data-row-id', item.id);
-                
-                row.innerHTML = `
-                    <td class="border border-gray-300 px-0 py-0">
-                        <input type="text" class="w-full px-4 py-3 border-none focus:outline-none focus:ring-2 focus:ring-primary cell-input" data-id="${item.id}" data-field="location" value="${item.location}">
-                    </td>
-                    <td class="border border-gray-300 px-0 py-0">
-                        <input type="text" class="w-full px-4 py-3 border-none focus:outline-none focus:ring-2 focus:ring-primary cell-input truncate" data-id="${item.id}" data-field="code" value="${item.code}" title="${item.code}">
-                    </td>
-                    <td class="border border-gray-300 px-0 py-0">
-                        <input type="text" class="w-full px-4 py-3 border-none focus:outline-none focus:ring-2 focus:ring-primary cell-input truncate" data-id="${item.id}" data-field="name" value="${item.name}" maxlength="50" title="${item.name}">
-                    </td>
-                    <td class="border border-gray-300 px-4 py-3 text-center">
-                        <div class="flex justify-center space-x-2">
-                            <button class="text-primary hover:text-primary/80 detail-btn" data-id="${item.id}">
-                                <i class="fa fa-eye"></i>
-                            </button>
-                            <button class="text-success hover:text-success/80 save-btn hidden" data-id="${item.id}">
-                                <i class="fa fa-save"></i>
-                            </button>
-                            <button class="text-danger hover:text-danger/80 delete-btn" data-id="${item.id}">
-                                <i class="fa fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                
-                tableBody.appendChild(row);
-            });
-            
-            // 绑定删除按钮事件
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
-                    deleteItem(id);
-                });
-            });
-            
-            // 绑定详情按钮事件
-            document.querySelectorAll('.detail-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
-                    showDetails(id);
-                });
-            });
-            
-            // 绑定单元格输入事件
-            document.querySelectorAll('.cell-input').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    const id = parseInt(e.target.getAttribute('data-id'));
-                    const saveBtn = document.querySelector(`.save-btn[data-id="${id}"]`);
-                    if (saveBtn) {
-                        saveBtn.classList.remove('hidden');
-                    }
+                const imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "attemptBoth",
                 });
                 
-                // 按Enter键保存
-                input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        const id = parseInt(e.target.getAttribute('data-id'));
-                        saveCellChanges(id);
-                    }
-                });
-                
-                // 按Escape键取消编辑
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') {
-                        const id = parseInt(e.target.getAttribute('data-id'));
-                        cancelCellChanges(id);
-                    }
-                });
-            });
-            
-            // 绑定保存按钮事件
-            document.querySelectorAll('.save-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
-                    saveCellChanges(id);
-                });
-            });
-        }
-        
-        // 删除项目
-        function deleteItem(id) {
-            const index = warehouseData.findIndex(item => item.id === id);
-            if (index !== -1) {
-                const location = warehouseData[index].location;
-                warehouseData.splice(index, 1);
-                updateTableDisplay();
-                saveDataToLocalStorage();
-                showToast('删除成功', `已删除仓位 ${location} 的记录`, 'info');
-            }
-        }
-        
-        // 显示提示框
-        function showToast(title, message, type = 'success') {
-            // 设置图标和颜色
-            if (type === 'success') {
-                toastIcon.className = 'mr-3 mt-0.5 text-success';
-                toastIcon.innerHTML = '<i class="fa fa-check-circle text-xl"></i>';
-            } else if (type === 'error') {
-                toastIcon.className = 'mr-3 mt-0.5 text-danger';
-                toastIcon.innerHTML = '<i class="fa fa-exclamation-circle text-xl"></i>';
-            } else if (type === 'info') {
-                toastIcon.className = 'mr-3 mt-0.5 text-blue-500';
-                toastIcon.innerHTML = '<i class="fa fa-info-circle text-xl"></i>';
-            }
-            
-            // 设置标题和消息
-            toastTitle.textContent = title;
-            toastMessage.textContent = message;
-            
-            // 显示提示框
-            scanResultToast.classList.remove('translate-y-20', 'opacity-0');
-            
-            // 3秒后自动隐藏
-            clearTimeout(window.toastTimeout);
-            window.toastTimeout = setTimeout(hideToast, 3000);
-        }
-        
-        // 隐藏提示框
-        function hideToast() {
-            scanResultToast.classList.add('translate-y-20', 'opacity-0');
-        }
-        
-        // 导出数据为CSV
-        function exportData() {
-            if (warehouseData.length === 0) {
-                showToast('导出失败', '没有数据可导出', 'error');
-                return;
-            }
-            
-            // 创建CSV内容
-            let csvContent = "仓位,编码,名称\n";
-            
-            warehouseData.forEach(item => {
-                // 处理CSV中的特殊字符，如逗号、引号等
-                const escapeCsvField = (field) => {
-                    if (field === undefined || field === null) return '';
-                    const str = String(field);
-                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-                        return `"${str.replace(/"/g, '""')}"`;
-                    }
-                    return str;
-                };
-                
-                csvContent += `${escapeCsvField(item.location)},${escapeCsvField(item.code)},${escapeCsvField(item.name)}\n`;
-            });
-            
-            // 创建Blob对象
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            
-            // 创建下载链接
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
-            link.setAttribute('download', `仓位管理数据_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showToast('导出成功', '数据已导出为CSV文件', 'success');
-        }
-        
-        // 清空数据
-        function clearData() {
-            if (warehouseData.length === 0) {
-                showToast('提示', '数据已为空', 'info');
-                return;
-            }
-            
-            if (confirm('确定要清空所有数据吗？此操作不可恢复。')) {
-                warehouseData = [];
-                nextRowId = 1;
-                updateTableDisplay();
-                clearDetailsTable();
-                saveDataToLocalStorage();
-                showToast('清空成功', '所有数据已清空', 'info');
-            }
-        }
-        
-        // 显示详情
-        function showDetails(id) {
-            const item = warehouseData.find(item => item.id === id);
-            if (!item) return;
-            
-            // 清空详情表格
-            detailsTableBody.innerHTML = '';
-            detailsTableBody.setAttribute('data-item-id', item.id);
-            
-            // 添加详情行
-            const details = [
-                { field: '仓位', value: item.location },
-                { field: '编码', value: item.code },
-                { field: '名称', value: item.name },
-                { field: '创建时间', value: formatDateTime(item.createdAt) },
-                { field: '更新时间', value: formatDateTime(item.updatedAt) }
-            ];
-            
-            details.forEach(detail => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 transition-colors';
-                
-                row.innerHTML = `
-                    <td class="border border-gray-300 px-4 py-3 font-medium">${detail.field}</td>
-                    <td class="border border-gray-300 px-4 py-3">${detail.value}</td>
-                `;
-                
-                detailsTableBody.appendChild(row);
-            });
-            
-            // 显示详情区域
-            detailsSection.classList.remove('hidden');
-            
-            // 滚动到详情区域
-            detailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        
-        // 清空详情表格
-        function clearDetailsTable() {
-            detailsTableBody.innerHTML = '';
-            detailsSection.classList.add('hidden');
-        }
-        
-        // 格式化日期时间
-        function formatDateTime(dateTimeString) {
-            const date = new Date(dateTimeString);
-            return date.toLocaleString('zh-CN', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-        }
-        
-        // 清空手动输入框
-        function clearManualInputs() {
-            locationInput.value = '';
-            codeInput.value = '';
-            nameInput.value = '';
-        }
-        
-        // 保存单元格更改
-        function saveCellChanges(id) {
-            const item = warehouseData.find(item => item.id === id);
-            if (!item) return;
-            
-            // 获取所有输入框
-            const inputs = document.querySelectorAll(`.cell-input[data-id="${id}"]`);
-            let hasChanges = false;
-            
-            // 更新数据
-            inputs.forEach(input => {
-                const field = input.getAttribute('data-field');
-                const value = input.value.trim();
-                
-                // 编码字段不再限制长度，保持完整内容以便在详细信息中显示
-                if (field === 'code') {
-                    if (item[field] !== value) {
-                        item[field] = value;
-                        hasChanges = true;
-                    }
-                } 
-                // 处理名称过长的情况，添加title属性以便悬停查看完整内容
-                else if (field === 'name') {
-                    if (item[field] !== value) {
-                        item[field] = value;
-                        input.setAttribute('title', value);
-                        hasChanges = true;
-                    }
-                }
-                // 其他字段正常更新
-                else if (item[field] !== value) {
-                    item[field] = value;
-                    hasChanges = true;
-                }
-            });
-            
-            if (hasChanges) {
-                // 更新时间戳
-                item.updatedAt = new Date().toISOString();
-                
-                // 保存到本地存储
-                saveDataToLocalStorage();
-                
-                // 隐藏保存按钮
-                const saveBtn = document.querySelector(`.save-btn[data-id="${id}"]`);
-                if (saveBtn) {
-                    saveBtn.classList.add('hidden');
-                }
-                
-                // 显示成功提示
-                showToast('更新成功', '数据已保存', 'success');
-                
-                // 如果详情面板打开，更新详情
-                if (!detailsSection.classList.contains('hidden')) {
-                    const currentDetailId = detailsTableBody.getAttribute('data-item-id');
-                    if (currentDetailId && parseInt(currentDetailId) === id) {
-                        showDetails(id);
-                    }
+                if (code) {
+                    scanning = false;
+                    document.getElementById('scanResultText').textContent = code.data;
+                    document.getElementById('scanResult').classList.remove('hidden');
                 }
             }
-        }
-        
-        // 取消单元格更改
-        function cancelCellChanges(id) {
-            const item = warehouseData.find(item => item.id === id);
-            if (!item) return;
             
-            // 恢复原始值
-            const inputs = document.querySelectorAll(`.cell-input[data-id="${id}"]`);
-            inputs.forEach(input => {
-                const field = input.getAttribute('data-field');
-                input.value = item[field];
-            });
-            
-            // 隐藏保存按钮
-            const saveBtn = document.querySelector(`.save-btn[data-id="${id}"]`);
-            if (saveBtn) {
-                saveBtn.classList.add('hidden');
+            if (scanning) {
+                requestAnimationFrame(tick);
             }
-        }
-        
-        // 保存数据到本地存储
-        function saveDataToLocalStorage() {
-            try {
-                localStorage.setItem('warehouseData', JSON.stringify(warehouseData));
-                localStorage.setItem('nextRowId', nextRowId.toString());
-            } catch (error) {
-                console.error('保存数据到本地存储时出错:', error);
-            }
-        }
-        
-        // 用户管理相关函数
-        
-        // 初始化用户数据
-        function initializeUserData() {
-            const savedUsers = localStorage.getItem('warehouseUsers');
-            if (savedUsers) {
-                users = JSON.parse(savedUsers);
-            } else {
-                // 创建默认用户
-                users = [
-                    { id: 1, username: 'admin', password: '123456', role: USER_ROLES.ADMIN },
-                    { id: 2, username: 'user', password: '123456', role: USER_ROLES.USER }
-                ];
-                saveUsersToLocalStorage();
-            }
-            
-            // 检查是否有记住的用户
-            const savedCurrentUser = localStorage.getItem('warehouseCurrentUser');
-            if (savedCurrentUser) {
-                const userData = JSON.parse(savedCurrentUser);
-                const user = users.find(u => u.id === userData.id && u.username === userData.username);
-                if (user) {
-                    currentUser = user;
-                    document.getElementById('loginScreen').classList.add('hidden');
-                    document.getElementById('mainApp').classList.remove('hidden');
-                    document.getElementById('currentUsername').textContent = user.username;
-                    updateUIByRole(user.role);
-                    
-                    // 确保显示查询页面
-                    showQueryPage();
-                }
-            }
-        }
-        
-        // 保存用户数据到本地存储
-        function saveUsersToLocalStorage() {
-            localStorage.setItem('warehouseUsers', JSON.stringify(users));
-        }
-        
-        // 处理登录
-        function handleLogin() {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const remember = document.getElementById('remember').checked;
-            
-            if (!username || !password) {
-                showToast('登录失败', '请输入用户名和密码', 'error');
-                return;
-            }
-            
-            const user = users.find(u => u.username === username && u.password === password);
-            if (user) {
-                currentUser = user;
-                
-                // 记住用户
-                if (remember) {
-                    localStorage.setItem('warehouseCurrentUser', JSON.stringify({
-                        id: user.id,
-                        username: user.username,
-                        role: user.role
-                    }));
-                } else {
-                    localStorage.removeItem('warehouseCurrentUser');
-                }
-                
-                // 显示主界面
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                
-                // 确保显示查询页面
-                showQueryPage();
-                
-                // 更新用户信息显示
-                document.getElementById('currentUsername').textContent = user.username;
-                
-                // 根据角色显示/隐藏功能
-                updateUIByRole(user.role);
-                
-                showToast('登录成功', `欢迎回来，${user.username}！`, 'success');
-            } else {
-                showToast('登录失败', '用户名或密码错误', 'error');
-            }
-        }
-        
-        // 处理退出
-        function handleLogout() {
-            currentUser = null;
-            localStorage.removeItem('warehouseCurrentUser');
-            
-            // 显示登录界面
-            document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('mainApp').classList.add('hidden');
-            
-            // 清空登录表单
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('remember').checked = false;
-        }
-        
-        // 根据角色更新UI
-        function updateUIByRole(role) {
-            const userManagementBtn = document.getElementById('userManagementBtn');
-            
-            if (role === USER_ROLES.ADMIN) {
-                userManagementBtn.classList.remove('hidden');
-            } else {
-                userManagementBtn.classList.add('hidden');
-            }
-        }
-        
-        // 显示用户管理界面
-        function showUserManagement() {
-            if (currentUser && currentUser.role === USER_ROLES.ADMIN) {
-                updateUsersTable();
-                document.getElementById('userManagementModal').classList.remove('hidden');
-            }
-        }
-        
-        // 更新用户表格
-        function updateUsersTable() {
-            const usersTableBody = document.getElementById('usersTableBody');
-            usersTableBody.innerHTML = '';
-            
-            users.forEach(user => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 transition-colors';
-                
-                row.innerHTML = `
-                    <td class="border border-gray-300 px-4 py-3">${user.username}</td>
-                    <td class="border border-gray-300 px-4 py-3">
-                        <span class="px-2 py-1 rounded-full text-xs ${user.role === USER_ROLES.ADMIN ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">
-                            ${user.role === USER_ROLES.ADMIN ? '管理员' : '普通用户'}
-                        </span>
-                    </td>
-                    <td class="border border-gray-300 px-4 py-3 text-center">
-                        <div class="flex justify-center space-x-2">
-                            <button class="text-primary hover:text-primary/80 edit-user-btn" data-id="${user.id}">
-                                <i class="fa fa-pencil"></i>
-                            </button>
-                            <button class="text-danger hover:text-danger/80 delete-user-btn" data-id="${user.id}">
-                                <i class="fa fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                
-                usersTableBody.appendChild(row);
-            });
-            
-            // 绑定编辑按钮事件
-            document.querySelectorAll('.edit-user-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
-                    const user = users.find(u => u.id === id);
-                    if (user) {
-                        openEditUserModal(user);
-                    }
-                });
-            });
-            
-            // 绑定删除按钮事件
-            document.querySelectorAll('.delete-user-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
-                    const user = users.find(u => u.id === id);
-                    
-                    // 不允许删除当前登录用户
-                    if (currentUser && user.id === currentUser.id) {
-                        showToast('删除失败', '不能删除当前登录的用户', 'error');
-                        return;
-                    }
-                    
-                    // 不允许删除最后一个管理员
-                    if (user.role === USER_ROLES.ADMIN) {
-                        const adminCount = users.filter(u => u.role === USER_ROLES.ADMIN).length;
-                        if (adminCount <= 1) {
-                            showToast('删除失败', '系统至少需要保留一个管理员账户', 'error');
-                            return;
-                        }
-                    }
-                    
-                    if (confirm(`确定要删除用户 ${user.username} 吗？`)) {
-                        users = users.filter(u => u.id !== id);
-                        saveUsersToLocalStorage();
-                        updateUsersTable();
-                        showToast('删除成功', `用户 ${user.username} 已删除`, 'success');
-                    }
-                });
-            });
-        }
-        
-        // 打开编辑用户模态框
-        function openEditUserModal(user = null) {
-            const modal = document.getElementById('editUserModal');
-            const title = document.getElementById('editUserTitle');
-            const userId = document.getElementById('editUserId');
-            const username = document.getElementById('editUsername');
-            const password = document.getElementById('editPassword');
-            const role = document.getElementById('editRole');
-            
-            if (user) {
-                title.textContent = '编辑用户';
-                userId.value = user.id;
-                username.value = user.username;
-                password.value = ''; // 密码为空，不显示
-                role.value = user.role;
-                
-                // 如果是编辑当前用户，不允许修改角色
-                if (currentUser && user.id === currentUser.id) {
-                    role.disabled = true;
-                } else {
-                    role.disabled = false;
-                }
-            } else {
-                title.textContent = '添加用户';
-                userId.value = '';
-                username.value = '';
-                password.value = '';
-                role.value = USER_ROLES.USER;
-                role.disabled = false;
-            }
-            
-            modal.classList.remove('hidden');
-        }
-        
-        // 保存用户
-        function saveUser() {
-            const userId = document.getElementById('editUserId').value;
-            const username = document.getElementById('editUsername').value.trim();
-            const password = document.getElementById('editPassword').value;
-            const role = document.getElementById('editRole').value;
-            
-            if (!username) {
-                showToast('保存失败', '用户名不能为空', 'error');
-                return;
-            }
-            
-            // 检查用户名是否已存在
-            const existingUser = users.find(u => u.username === username && u.id.toString() !== userId);
-            if (existingUser) {
-                showToast('保存失败', '用户名已存在', 'error');
-                return;
-            }
-            
-            if (userId) {
-                // 编辑现有用户
-                const userIndex = users.findIndex(u => u.id.toString() === userId);
-                if (userIndex !== -1) {
-                    users[userIndex] = {
-                        ...users[userIndex],
-                        username,
-                        role
-                    };
-                    
-                    // 如果输入了密码，则更新密码
-                    if (password) {
-                        users[userIndex].password = password;
-                    }
-                    
-                    showToast('保存成功', '用户信息已更新', 'success');
-                }
-            } else {
-                // 添加新用户
-                if (!password) {
-                    showToast('保存失败', '新用户必须设置密码', 'error');
-                    return;
-                }
-                
-                const newId = Math.max(...users.map(u => u.id), 0) + 1;
-                users.push({
-                    id: newId,
-                    username,
-                    password,
-                    role
-                });
-                
-                showToast('保存成功', '新用户已添加', 'success');
-            }
-            
-            saveUsersToLocalStorage();
-            updateUsersTable();
-            document.getElementById('editUserModal').classList.add('hidden');
-        }
-        
-        // 从本地存储加载数据
-        function loadDataFromLocalStorage() {
-            try {
-                const savedData = localStorage.getItem('warehouseData');
-                const savedNextRowId = localStorage.getItem('nextRowId');
-                
-                if (savedData) {
-                    warehouseData = JSON.parse(savedData);
-                }
-                
-                if (savedNextRowId) {
-                    nextRowId = parseInt(savedNextRowId);
-                }
-            } catch (error) {
-                console.error('从本地存储加载数据时出错:', error);
-                warehouseData = [];
-                nextRowId = 1;
-            }
-        }
-        // 页面切换相关函数
-        
-        // 切换页面
-        function switchPage(pageName) {
-            const navHome = document.getElementById('navHome');
-            const navQuery = document.getElementById('navQuery');
-            const queryPage = document.getElementById('queryPage');
-            
-            // 重置所有导航按钮样式
-            navHome.classList.remove('active', 'text-primary', 'border-primary');
-            navHome.classList.add('text-gray-600', 'border-transparent');
-            navQuery.classList.remove('active', 'text-primary', 'border-primary');
-            navQuery.classList.add('text-gray-600', 'border-transparent');
-            
-            // 隐藏查询页面
-            queryPage.classList.add('hidden');
-            
-            if (pageName === 'home') {
-                navHome.classList.add('active', 'text-primary', 'border-primary');
-                navHome.classList.remove('text-gray-600', 'border-transparent');
-            } else if (pageName === 'query') {
-                navQuery.classList.add('active', 'text-primary', 'border-primary');
-                navQuery.classList.remove('text-gray-600', 'border-transparent');
-                queryPage.classList.remove('hidden');
-            }
-        }
-        
-        // 查询相关函数
-        
-        // 执行查询
-        function performQuery() {
-            const locationQuery = document.getElementById('queryLocation').value.trim().toLowerCase();
-            const codeQuery = document.getElementById('queryCode').value.trim().toLowerCase();
-            const nameQuery = document.getElementById('queryName').value.trim().toLowerCase();
-            const remarkQuery = document.getElementById('queryRemark') ? document.getElementById('queryRemark').value.trim().toLowerCase() : '';
-            
-            // 过滤数据
-            const filteredData = warehouseData.filter(item => {
-                const locationMatch = !locationQuery || item.location.toLowerCase().includes(locationQuery);
-                const codeMatch = !codeQuery || item.code.toLowerCase().includes(codeQuery);
-                const nameMatch = !nameQuery || item.name.toLowerCase().includes(nameQuery);
-                const remarkMatch = !remarkQuery || (!item.remark ? false : item.remark.toLowerCase().includes(remarkQuery));
-                
-                return locationMatch && codeMatch && nameMatch;
-            });
-            
-            // 按仓位号排序
-            filteredData.sort((a, b) => {
-                return naturalSort(a.location, b.location);
-            });
-            
-            // 更新查询结果显示
-            updateQueryResults(filteredData);
-        }
-        
-        // 更新查询结果显示
-        function updateQueryResults(results) {
-            const resultsTableBody = document.getElementById('queryResultsTableBody');
-            const queryResults = document.getElementById('queryResults');
-            const queryEmptyState = document.getElementById('queryEmptyState');
-            const queryCount = document.getElementById('queryCount');
-            
-            // 清空表格
-            resultsTableBody.innerHTML = '';
-            
-            if (results.length === 0) {
-                queryResults.classList.add('hidden');
-                queryEmptyState.classList.remove('hidden');
-                queryCount.textContent = '0';
-                return;
-            }
-            
-            // 显示结果
-            queryResults.classList.remove('hidden');
-            queryEmptyState.classList.add('hidden');
-            queryCount.textContent = results.length.toString();
-            
-            // 添加结果到表格
-            results.forEach((item, index) => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 transition-colors';
-                
-                row.innerHTML = `
-                    <td class="border-b border-gray-200 px-4 py-2 text-gray-600">${index + 1}</td>
-                    <td class="border-b border-gray-200 px-4 py-2 font-medium">${item.location}</td>
-                    <td class="border-b border-gray-200 px-4 py-2">${item.code}</td>
-                    <td class="border-b border-gray-200 px-4 py-2">${item.name}</td>
-                    <td class="border-b border-gray-200 px-4 py-2">${item.remark || '-'}</td>
-                    <td class="border-b border-gray-200 px-4 py-2 text-gray-600 text-sm">${formatDateTime(item.timestamp)}</td>
-                    <td class="border-b border-gray-200 px-4 py-2 text-center">
-                        <button class="text-primary hover:text-primary/80 view-detail-btn" data-id="${item.id}">
-                            <i class="fa fa-eye"></i>
-                        </button>
-                    </td>
-                `;
-                
-                resultsTableBody.appendChild(row);
-            });
-            
-            // 绑定查看详情按钮事件
-            document.querySelectorAll('.view-detail-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
-                    const item = warehouseData.find(d => d.id === id);
-                    if (item) {
-                        showDetailPage(item);
-                    }
-                });
-            });
-        }
-        
-        // 重置查询
-        function resetQuery() {
-            document.getElementById('queryLocation').value = '';
-            document.getElementById('queryCode').value = '';
-            document.getElementById('queryName').value = '';
-            if (document.getElementById('queryRemark')) {
-                document.getElementById('queryRemark').value = '';
-            }
-            
-            document.getElementById('queryResults').classList.add('hidden');
-            document.getElementById('queryEmptyState').classList.add('hidden');
-        }
-        
-        // 导出查询结果
-        function exportQueryResults() {
-            const locationQuery = document.getElementById('queryLocation').value.trim().toLowerCase();
-            const codeQuery = document.getElementById('queryCode').value.trim().toLowerCase();
-            const nameQuery = document.getElementById('queryName').value.trim().toLowerCase();
-            
-            // 过滤数据
-            const filteredData = warehouseData.filter(item => {
-                const locationMatch = !locationQuery || item.location.toLowerCase().includes(locationQuery);
-                const codeMatch = !codeQuery || item.code.toLowerCase().includes(codeQuery);
-                const nameMatch = !nameQuery || item.name.toLowerCase().includes(nameQuery);
-                
-                return locationMatch && codeMatch && nameMatch;
-            });
-            
-            if (filteredData.length === 0) {
-                showToast('导出失败', '没有可导出的数据', 'error');
-                return;
-            }
-            
-            // 导出数据
-            exportDataToExcel(filteredData, '仓位查询结果');
-        }
-        
-        // 格式化日期时间
-        function formatDateTime(timestamp) {
-            const date = new Date(timestamp);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-            
-            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-        }
-        
-        // 编辑功能相关函数
-        
-        // 处理编辑按钮点击
-        function handleEditClick() {
-            const locationQuery = document.getElementById('queryLocation').value.trim();
-            const codeQuery = document.getElementById('queryCode').value.trim();
-            const nameQuery = document.getElementById('queryName').value.trim();
-            const remarkQuery = document.getElementById('queryRemark').value.trim();
-            
-            // 过滤数据
-            const filteredData = warehouseData.filter(item => {
-                const locationMatch = !locationQuery || item.location.toLowerCase().includes(locationQuery);
-                const codeMatch = !codeQuery || item.code.toLowerCase().includes(codeQuery);
-                const nameMatch = !nameQuery || item.name.toLowerCase().includes(nameQuery);
-                const remarkMatch = !remarkQuery || (!item.remark ? false : item.remark.toLowerCase().includes(remarkQuery));
-                
-                return locationMatch && codeMatch && nameMatch;
-            });
-            
-            if (filteredData.length === 0) {
-                showToast('编辑失败', '未找到匹配的记录', 'error');
-                return;
-            }
-            
-            if (filteredData.length > 1) {
-                showToast('编辑失败', '找到多条记录，请缩小查询范围', 'error');
-                return;
-            }
-            
-            // 打开编辑模态框
-            openEditModal(filteredData[0]);
-        }
-        
-        // 打开编辑模态框
-        // 页面切换函数
-        
-        // 显示数据录入页面
-        function showDataEntryPage() {
-            document.getElementById('queryPage').classList.add('hidden');
-            document.getElementById('dataEntryPage').classList.remove('hidden');
-            document.getElementById('dataEntryFooter').classList.remove('hidden');
-        }
-        
-        // 显示查询页面
-        function showQueryPage() {
-            document.getElementById('queryPage').classList.remove('hidden');
-            document.getElementById('dataEntryPage').classList.add('hidden');
-            document.getElementById('dataEntryFooter').classList.add('hidden');
-            document.getElementById('detailPage').classList.add('hidden');
-        }
-        
-        // 显示详情页面
-        function showDetailPage(item) {
-            // 隐藏其他页面，显示详情页面
-            document.getElementById('queryPage').classList.add('hidden');
-            document.getElementById('dataEntryPage').classList.add('hidden');
-            document.getElementById('dataEntryFooter').classList.add('hidden');
-            document.getElementById('detailPage').classList.remove('hidden');
-            
-            // 填充详情数据
-            document.getElementById('detailLocation').textContent = item.location;
-            document.getElementById('detailLocation2').textContent = item.location;
-            document.getElementById('detailCode').textContent = item.code;
-            document.getElementById('detailName').textContent = item.name;
-            
-            // 处理图片显示
-            const detailImage = document.getElementById('detailImage');
-            const noImageIcon = document.getElementById('noImageIcon');
-            
-            if (item.image) {
-                detailImage.src = item.image;
-                detailImage.classList.remove('hidden');
-                noImageIcon.classList.add('hidden');
-            } else {
-                detailImage.classList.add('hidden');
-                noImageIcon.classList.remove('hidden');
-            }
-        }
-        
-        // 返回查询结果列表
-        function backToList() {
-            document.getElementById('detailPage').classList.add('hidden');
-            document.getElementById('queryPage').classList.remove('hidden');
         }
     </script>
-</body>
-</html>
+
+</body></html>
