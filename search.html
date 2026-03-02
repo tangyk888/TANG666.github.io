@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仓库仓位查询系统 - 查询</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- jsQR 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        light: '#f3f4f6',
+                        dark: '#1f2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-all-300 {
+                transition: all 300ms ease-in-out;
+            }
+            .shadow-card {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <!-- 返回按钮 -->
+                    <button id="backButton" class="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all-300">
+                        <i class="fa fa-arrow-left"></i>
+                    </button>
+                    
+                    <!-- 标题 -->
+                    <h1 class="ml-4 text-xl font-semibold text-gray-800">仓位查询</h1>
+                </div>
+                
+                <div class="flex items-center">
+                    <!-- 用户信息 -->
+                    <div class="mr-4">
+                        <span class="text-sm text-gray-600">欢迎，</span>
+                        <span id="currentUsername" class="text-sm font-medium text-gray-800">用户</span>
+                    </div>
+                    
+                    <!-- 菜单按钮 -->
+                    <button id="menuButton" class="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all-300">
+                        <i class="fa fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- 菜单弹窗 -->
+    <div id="menuModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-start justify-end">
+        <div class="bg-white rounded-lg shadow-xl w-64 mt-16 mr-4 overflow-hidden">
+            <div class="py-1">
+                <a href="users.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                    <i class="fa fa-users mr-3 text-gray-500"></i>
+                    用户管理
+                </a>
+                <a href="settings.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                    <i class="fa fa-cog mr-3 text-gray-500"></i>
+                    系统设置
+                </a>
+                <hr class="my-1 border-gray-200">
+                <a href="#" id="logoutButton" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center">
+                    <i class="fa fa-sign-out mr-3 text-red-500"></i>
+                    登出
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主内容区 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- 查询卡片 -->
+        <div class="bg-white rounded-lg shadow-card p-6 mb-6">
+            <h2 class="text-lg font-medium text-gray-800 mb-4">查询条件</h2>
+            
+            <form id="searchForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- 编码查询 -->
+                    <div>
+                        <label for="codeSearch" class="block text-sm font-medium text-gray-700 mb-1">编码</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                <i class="fa fa-barcode"></i>
+                            </span>
+                            <input type="text" id="codeSearch" name="codeSearch" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300" placeholder="请输入编码">
+                        </div>
+                    </div>
+                    
+                    <!-- 名称查询 -->
+                    <div>
+                        <label for="nameSearch" class="block text-sm font-medium text-gray-700 mb-1">名称</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                <i class="fa fa-tag"></i>
+                            </span>
+                            <input type="text" id="nameSearch" name="nameSearch" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300" placeholder="请输入名称">
+                        </div>
+                    </div>
+                    
+                    <!-- 仓位查询 -->
+                    <div>
+                        <label for="positionSearch" class="block text-sm font-medium text-gray-700 mb-1">仓位</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                <i class="fa fa-map-marker"></i>
+                            </span>
+                            <input type="text" id="positionSearch" name="positionSearch" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300" placeholder="请输入仓位">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 查询按钮组 -->
+                <div class="flex flex-wrap items-center justify-between pt-2">
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="scanQrButton" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all-300">
+                            <i class="fa fa-qrcode mr-2"></i>
+                            扫码查询
+                        </button>
+                        
+                        <button type="button" id="batchScanButton" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all-300">
+                            <i class="fa fa-camera mr-2"></i>
+                            批量扫码
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all-300">
+                            <i class="fa fa-search mr-2"></i>
+                            查询
+                        </button>
+                        
+                        <button type="button" id="clearSearchButton" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all-300 ml-2">
+                            <i class="fa fa-refresh mr-2"></i>
+                            清空
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 录入按钮卡片 -->
+        <div class="bg-white rounded-lg shadow-card p-6 mb-6">
+            <div class="flex items-center justify-center">
+                <a href="input.html" class="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-success hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success transition-all-300 w-full justify-center">
+                    <i class="fa fa-plus-circle mr-2 text-xl"></i>
+                    仓位录入
+                </a>
+            </div>
+        </div>
+        
+        <!-- 操作说明卡片 -->
+        <div class="bg-blue-50 rounded-lg border border-blue-200 p-6">
+            <h3 class="text-md font-medium text-blue-800 mb-2">操作说明</h3>
+            <ul class="text-sm text-blue-700 space-y-1">
+                <li class="flex items-start">
+                    <i class="fa fa-info-circle mt-1 mr-2"></i>
+                    <span>支持多条件组合查询，多个关键词请用空格分隔</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fa fa-info-circle mt-1 mr-2"></i>
+                    <span>扫码查询支持单个二维码扫描，批量扫码支持连续扫描多个二维码</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fa fa-info-circle mt-1 mr-2"></i>
+                    <span>点击"仓位录入"按钮进入仓位信息录入页面</span>
+                </li>
+            </ul>
+        </div>
+    </main>
+    
+    <!-- 二维码扫描弹窗 -->
+    <div id="qrScanModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
+            <div class="p-4 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-800">扫码查询</h3>
+                <button id="closeScanButton" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-4">
+                <div id="scanContainer" class="relative w-full" style="height: 400px;">
+                    <video id="scanVideo" class="w-full h-full object-cover rounded-lg"></video>
+                    <canvas id="scanCanvas" class="absolute top-0 left-0 w-full h-full hidden"></canvas>
+                    
+                    <!-- 扫描框 -->
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-4 border-primary rounded-lg pointer-events-none">
+                        <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary -mt-2 -ml-2"></div>
+                        <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary -mt-2 -mr-2"></div>
+                        <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary -mb-2 -ml-2"></div>
+                        <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary -mb-2 -mr-2"></div>
+                    </div>
+                    
+                    <!-- 扫描线动画 -->
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-0.5 bg-primary bg-opacity-75 animate-scan"></div>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <p class="text-sm text-gray-600">请将二维码对准扫描框</p>
+                    <p id="scanStatus" class="text-sm font-medium text-gray-800 mt-1">准备扫描...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 批量扫码弹窗 -->
+    <div id="batchScanModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
+            <div class="p-4 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-800">批量扫码</h3>
+                <button id="closeBatchScanButton" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-4">
+                <div id="batchScanContainer" class="relative w-full" style="height: 400px;">
+                    <video id="batchScanVideo" class="w-full h-full object-cover rounded-lg"></video>
+                    <canvas id="batchScanCanvas" class="absolute top-0 left-0 w-full h-full hidden"></canvas>
+                    
+                    <!-- 扫描框 -->
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-4 border-primary rounded-lg pointer-events-none">
+                        <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary -mt-2 -ml-2"></div>
+                        <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary -mt-2 -mr-2"></div>
+                        <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary -mb-2 -ml-2"></div>
+                        <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary -mb-2 -mr-2"></div>
+                    </div>
+                    
+                    <!-- 扫描线动画 -->
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-0.5 bg-primary bg-opacity-75 animate-scan"></div>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">已扫描条码</h4>
+                        <ul id="scannedCodesList" class="text-sm text-gray-600 max-h-32 overflow-y-auto">
+                            <!-- 扫描的条码将在这里显示 -->
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-between">
+                        <button id="clearScannedButton" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all-300">
+                            <i class="fa fa-trash mr-2"></i>
+                            清空
+                        </button>
+                        
+                        <button id="finishBatchScanButton" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all-300">
+                            <i class="fa fa-check mr-2"></i>
+                            完成扫描
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 扫描结果提示 -->
+    <div id="scanResultToast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-4 max-w-md hidden">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i id="scanResultIcon" class="fa fa-check-circle text-green-500 text-xl"></i>
+            </div>
+            <div class="ml-3">
+                <h4 id="scanResultTitle" class="text-sm font-medium text-gray-900">扫描成功</h4>
+                <p id="scanResultMessage" class="text-sm text-gray-500 mt-1">已识别二维码内容</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 检查登录状态
+        function checkLoginStatus() {
+            // 首先检查sessionStorage中的用户信息
+            let currentUser = sessionStorage.getItem('currentUser');
+            
+            // 如果sessionStorage中没有，检查URL参数（访客登录）
+            if (!currentUser) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const encodedUser = urlParams.get('user');
+                
+                if (encodedUser) {
+                    try {
+                        // 解码URL参数中的用户信息
+                        const userInfo = JSON.parse(atob(encodedUser));
+                        if (userInfo && userInfo.guest) {
+                            // 这是访客登录，直接使用用户信息
+                            currentUser = JSON.stringify(userInfo);
+                            // 可选：也保存到sessionStorage以便后续页面使用
+                            sessionStorage.setItem('currentUser', currentUser);
+                            console.log('从URL参数获取访客用户信息:', userInfo);
+                        }
+                    } catch (error) {
+                        console.error('解析URL用户参数失败:', error);
+                    }
+                }
+            }
+            
+            if (!currentUser) {
+                // 重定向到登录页面
+                window.location.href = 'index.html';
+                return false;
+            }
+            
+            // 显示当前用户
+            const userInfo = JSON.parse(currentUser);
+            document.getElementById('currentUsername').textContent = userInfo.username;
+            
+            return true;
+        }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查登录状态
+            if (!checkLoginStatus()) {
+                return;
+            }
+            
+            // 菜单按钮点击事件
+            document.getElementById('menuButton').addEventListener('click', function() {
+                document.getElementById('menuModal').classList.toggle('hidden');
+            });
+            
+            // 关闭菜单
+            document.getElementById('menuModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+            
+            // 登出按钮点击事件
+            document.getElementById('logoutButton').addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // 清除登录状态
+                sessionStorage.removeItem('currentUser');
+                
+                // 重定向到登录页面
+                window.location.href = 'index.html';
+            });
+            
+            // 返回按钮点击事件
+            document.getElementById('backButton').addEventListener('click', function() {
+                // 显示确认对话框
+                if (confirm('确定要退出系统吗？')) {
+                    // 清除登录状态
+                    sessionStorage.removeItem('currentUser');
+                    
+                    // 重定向到登录页面
+                    window.location.href = 'index.html';
+                }
+            });
+            
+            // 搜索表单提交事件
+            document.getElementById('searchForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 获取搜索条件
+                const codeSearch = document.getElementById('codeSearch').value.trim();
+                const nameSearch = document.getElementById('nameSearch').value.trim();
+                const positionSearch = document.getElementById('positionSearch').value.trim();
+                
+                // 构建查询参数
+                const searchParams = new URLSearchParams();
+                
+                if (codeSearch) {
+                    searchParams.append('code', codeSearch);
+                }
+                
+                if (nameSearch) {
+                    searchParams.append('name', nameSearch);
+                }
+                
+                if (positionSearch) {
+                    searchParams.append('position', positionSearch);
+                }
+                
+                // 跳转到结果页面
+                window.location.href = `result.html?${searchParams.toString()}`;
+            });
+            
+            // 清空搜索按钮点击事件
+            document.getElementById('clearSearchButton').addEventListener('click', function() {
+                document.getElementById('codeSearch').value = '';
+                document.getElementById('nameSearch').value = '';
+                document.getElementById('positionSearch').value = '';
+            });
+            
+            // 扫码查询按钮点击事件
+            document.getElementById('scanQrButton').addEventListener('click', function() {
+                openQrScanModal();
+            });
+            
+            // 批量扫码按钮点击事件
+            document.getElementById('batchScanButton').addEventListener('click', function() {
+                openBatchScanModal();
+            });
+            
+            // 关闭扫码弹窗按钮点击事件
+            document.getElementById('closeScanButton').addEventListener('click', function() {
+                closeQrScanModal();
+            });
+            
+            // 关闭批量扫码弹窗按钮点击事件
+            document.getElementById('closeBatchScanButton').addEventListener('click', function() {
+                closeBatchScanModal();
+            });
+            
+            // 清空已扫描条码按钮点击事件
+            document.getElementById('clearScannedButton').addEventListener('click', function() {
+                document.getElementById('scannedCodesList').innerHTML = '';
+            });
+            
+            // 完成批量扫描按钮点击事件
+            document.getElementById('finishBatchScanButton').addEventListener('click', function() {
+                const scannedCodes = getScannedCodes();
+                
+                if (scannedCodes.length === 0) {
+                    alert('请先扫描二维码');
+                    return;
+                }
+                
+                // 构建查询参数
+                const searchParams = new URLSearchParams();
+                
+                // 添加批量扫描的条码
+                scannedCodes.forEach(code => {
+                    searchParams.append('batch', code);
+                });
+                
+                // 关闭弹窗
+                closeBatchScanModal();
+                
+                // 跳转到结果页面
+                window.location.href = `result.html?${searchParams.toString()}`;
+            });
+        });
+        
+        // 打开二维码扫描弹窗
+        function openQrScanModal() {
+            const modal = document.getElementById('qrScanModal');
+            const video = document.getElementById('scanVideo');
+            
+            modal.classList.remove('hidden');
+            
+            // 获取摄像头权限
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                    
+                    // 开始扫描
+                    startQrScan();
+                })
+                .catch(function(err) {
+                    console.error('获取摄像头失败:', err);
+                    showScanResult('error', '获取摄像头失败', '请检查设备权限设置');
+                    modal.classList.add('hidden');
+                });
+        }
+        
+        // 关闭二维码扫描弹窗
+        function closeQrScanModal() {
+            const modal = document.getElementById('qrScanModal');
+            const video = document.getElementById('scanVideo');
+            
+            // 停止视频流
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            
+            // 停止扫描
+            stopQrScan();
+            
+            // 隐藏弹窗
+            modal.classList.add('hidden');
+        }
+        
+        // 开始扫描二维码
+        let scanInterval;
+        function startQrScan() {
+            const video = document.getElementById('scanVideo');
+            const canvas = document.getElementById('scanCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 设置扫描状态
+            document.getElementById('scanStatus').textContent = '正在扫描...';
+            
+            // 设置canvas尺寸
+            function setCanvasSize() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+            }
+            
+            // 扫描函数
+            function scan() {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    setCanvasSize();
+                    
+                    // 绘制视频帧到canvas
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // 获取图像数据
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // 尝试解析二维码
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: 'attemptBoth'
+                    });
+                    
+                    if (code) {
+                        // 解析成功
+                        processScannedQrCode(code.data);
+                        
+                        // 停止扫描
+                        stopQrScan();
+                        
+                        // 关闭弹窗
+                        setTimeout(() => {
+                            closeQrScanModal();
+                        }, 1000);
+                    }
+                }
+            }
+            
+            // 开始扫描间隔
+            scanInterval = setInterval(scan, 200);
+        }
+        
+        // 停止扫描二维码
+        function stopQrScan() {
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+        }
+        
+        // 处理扫描到的二维码
+        function processScannedQrCode(data) {
+            try {
+                // 获取系统设置
+                const settings = JSON.parse(localStorage.getItem('warehouseSettings')) || {};
+                const delimiter = settings.delimiter || ',';
+                
+                // 解析二维码数据
+                const parts = data.split(delimiter);
+                
+                if (parts.length < 3) {
+                    showScanResult('error', '解析失败', '二维码格式不正确');
+                    return;
+                }
+                
+                // 根据设置的格式映射字段
+                const format = settings.qrCodeFormat || 'position,code,name';
+                const formatFields = format.split(',');
+                
+                const result = {};
+                formatFields.forEach((field, index) => {
+                    result[field.trim()] = parts[index] || '';
+                });
+                
+                // 显示扫描结果
+                showScanResult('success', '扫描成功', `仓位: ${result.position}, 编码: ${result.code}, 名称: ${result.name}`);
+                
+                // 构建查询参数
+                const searchParams = new URLSearchParams();
+                
+                if (result.position) {
+                    searchParams.append('position', result.position);
+                }
+                
+                if (result.code) {
+                    searchParams.append('code', result.code);
+                }
+                
+                if (result.name) {
+                    searchParams.append('name', result.name);
+                }
+                
+                // 跳转到结果页面
+                setTimeout(() => {
+                    window.location.href = `result.html?${searchParams.toString()}`;
+                }, 1500);
+            } catch (error) {
+                console.error('解析二维码数据失败:', error);
+                showScanResult('error', '解析失败', '无法解析二维码内容');
+            }
+        }
+        
+        // 显示扫描结果提示
+        function showScanResult(type, title, message) {
+            const toast = document.getElementById('scanResultToast');
+            const icon = document.getElementById('scanResultIcon');
+            const titleElement = document.getElementById('scanResultTitle');
+            const messageElement = document.getElementById('scanResultMessage');
+            
+            // 设置图标和颜色
+            if (type === 'success') {
+                icon.className = 'fa fa-check-circle text-green-500 text-xl';
+            } else if (type === 'error') {
+                icon.className = 'fa fa-exclamation-circle text-red-500 text-xl';
+            } else {
+                icon.className = 'fa fa-info-circle text-blue-500 text-xl';
+            }
+            
+            // 设置标题和消息
+            titleElement.textContent = title;
+            messageElement.textContent = message;
+            
+            // 显示提示
+            toast.classList.remove('hidden');
+            
+            // 3秒后隐藏
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // 打开批量扫描弹窗
+        function openBatchScanModal() {
+            const modal = document.getElementById('batchScanModal');
+            const video = document.getElementById('batchScanVideo');
+            
+            modal.classList.remove('hidden');
+            
+            // 获取摄像头权限
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                    
+                    // 开始扫描
+                    startBatchScan();
+                })
+                .catch(function(err) {
+                    console.error('获取摄像头失败:', err);
+                    alert('获取摄像头失败，请检查设备权限设置');
+                    modal.classList.add('hidden');
+                });
+        }
+        
+        // 关闭批量扫描弹窗
+        function closeBatchScanModal() {
+            const modal = document.getElementById('batchScanModal');
+            const video = document.getElementById('batchScanVideo');
+            
+            // 停止视频流
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            
+            // 停止扫描
+            stopBatchScan();
+            
+            // 隐藏弹窗
+            modal.classList.add('hidden');
+        }
+        
+        // 开始批量扫描
+        let batchScanInterval;
+        let lastScannedCode = '';
+        function startBatchScan() {
+            const video = document.getElementById('batchScanVideo');
+            const canvas = document.getElementById('batchScanCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 设置canvas尺寸
+            function setCanvasSize() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+            }
+            
+            // 扫描函数
+            function scan() {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    setCanvasSize();
+                    
+                    // 绘制视频帧到canvas
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // 获取图像数据
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // 尝试解析二维码
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: 'attemptBoth'
+                    });
+                    
+                    if (code && code.data !== lastScannedCode) {
+                        // 解析成功且不是重复的码
+                        lastScannedCode = code.data;
+                        
+                        try {
+                            // 获取系统设置
+                            const settings = JSON.parse(localStorage.getItem('warehouseSettings')) || {};
+                            const delimiter = settings.delimiter || ',';
+                            
+                            // 解析二维码数据
+                            const parts = code.data.split(delimiter);
+                            
+                            if (parts.length < 3) {
+                                showScanResult('error', '解析失败', '二维码格式不正确');
+                                return;
+                            }
+                            
+                            // 根据设置的格式映射字段
+                            const format = settings.qrCodeFormat || 'position,code,name';
+                            const formatFields = format.split(',');
+                            
+                            const result = {};
+                            formatFields.forEach((field, index) => {
+                                result[field.trim()] = parts[index] || '';
+                            });
+                            
+                            // 添加到已扫描列表
+                            addScannedCode(result);
+                            
+                            // 显示扫描结果
+                            showScanResult('success', '扫描成功', `已添加: ${result.code || result.position}`);
+                        } catch (error) {
+                            console.error('解析二维码数据失败:', error);
+                            showScanResult('error', '解析失败', '无法解析二维码内容');
+                        }
+                    }
+                }
+            }
+            
+            // 开始扫描间隔
+            batchScanInterval = setInterval(scan, 200);
+        }
+        
+        // 停止批量扫描
+        function stopBatchScan() {
+            if (batchScanInterval) {
+                clearInterval(batchScanInterval);
+                batchScanInterval = null;
+            }
+        }
+        
+        // 添加已扫描的条码
+        function addScannedCode(result) {
+            const list = document.getElementById('scannedCodesList');
+            
+            // 创建列表项
+            const li = document.createElement('li');
+            li.className = 'py-1 border-b border-gray-100 last:border-0';
+            li.dataset.code = result.code || '';
+            li.dataset.position = result.position || '';
+            li.dataset.name = result.name || '';
+            
+            // 设置内容
+            li.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="font-medium">${result.code || result.position}</span>
+                        <span class="text-gray-500 ml-2">${result.name || ''}</span>
+                    </div>
+                    <button class="text-red-500 hover:text-red-700 focus:outline-none remove-scanned-code">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            // 添加删除按钮事件
+            li.querySelector('.remove-scanned-code').addEventListener('click', function() {
+                li.remove();
+            });
+            
+            // 添加到列表
+            list.appendChild(li);
+        }
+        
+        // 获取已扫描的条码
+        function getScannedCodes() {
+            const list = document.getElementById('scannedCodesList');
+            const items = list.querySelectorAll('li');
+            
+            const codes = [];
+            items.forEach(item => {
+                codes.push({
+                    code: item.dataset.code,
+                    position: item.dataset.position,
+                    name: item.dataset.name
+                });
+            });
+            
+            return codes;
+        }
+        
+        // 添加CSS动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes scan {
+                0% { transform: translate(-50%, -150%); }
+                50% { transform: translate(-50%, 150%); }
+                100% { transform: translate(-50%, -150%); }
+            }
+            .animate-scan {
+                animation: scan 2s linear infinite;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
